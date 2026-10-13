@@ -1,0 +1,226 @@
+{
+  "run_at": "2026-10-13 18:03:31 EDT",
+  "tag": "a492b6",
+  "reps": 3,
+  "models": [
+    "claude-sonnet-5-5",
+    "claude-haiku-5-5"
+  ],
+  "prompt": "A warehouse has three conveyor belts. Belt A moves 12 boxes/min, B moves 9, C moves 15. A runs 40 min, stops 10, runs 30. B runs continuously for 75 min but loses 1 box in every 18 it moves. C starts 20 min late and runs until all three belts together have moved exactly 2,000 boxes, if that ever happens within two hours. Does it? If so, at what minute (to one decimal)? Show brief working, then give the final answer on its own line.",
+  "models_accepted": {
+    "claude-sonnet-5-5": "accepted",
+    "claude-haiku-5-5": "accepted"
+  },
+  "medians_output_tokens": {
+    "claude-sonnet-5-5": {
+      "agent_low": 727,
+      "agent_high": 1106,
+      "override_low": 852,
+      "override_high": 1151
+    },
+    "claude-haiku-5-5": {
+      "agent_low": 1507,
+      "agent_high": 1947,
+      "override_low": 1619,
+      "override_high": 2038
+    }
+  },
+  "verdicts": {
+    "claude-sonnet-5-5": "APPLIED: per-session override effort works (skill docs correct); overrides are fine for sweeps",
+    "claude-haiku-5-5": "INCONCLUSIVE: agent-level low vs high barely differ on this prompt; rerun with a harder prompt or PROBE_REPS=5"
+  },
+  "runs": [
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "agent_low",
+      "out": 808,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "agent_low",
+      "out": 716,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "agent_low",
+      "out": 727,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "agent_high",
+      "out": 1222,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "agent_high",
+      "out": 1077,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "agent_high",
+      "out": 1106,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "override_low",
+      "out": 921,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "override_low",
+      "out": 600,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "override_low",
+      "out": 852,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "override_high",
+      "out": 1225,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "override_high",
+      "out": 1072,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "arm": "override_high",
+      "out": 1151,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "agent_low",
+      "out": 1894,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "agent_low",
+      "out": 1374,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "agent_low",
+      "out": 1507,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "agent_high",
+      "out": 1947,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "agent_high",
+      "out": 1789,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "agent_high",
+      "out": 1986,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "override_low",
+      "out": 1471,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "override_low",
+      "out": 1619,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "override_low",
+      "out": 1778,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortLow(type='low')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "override_high",
+      "out": 2038,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "override_high",
+      "out": 1788,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "arm": "override_high",
+      "out": 2110,
+      "calls": 1,
+      "stop": "end_turn",
+      "echo": "BetaManagedAgentsEffortHigh(type='high')"
+    }
+  ]
+}
