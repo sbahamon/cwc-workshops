@@ -98,3 +98,55 @@ def test_oracle_and_null(cases):
         a = load_answer(c)
         assert grade(say(a["culprit_short"] or a["components"][0]), a)["root_cause"] == 1
         assert grade("", a) == {"root_cause": 0, "format": 0}
+
+
+# --- Diffs-only shortcut (run 2026-10-14, offline, after the Phase 6 results) ---
+# Reads every deploy's diff through CaseTools.get_diff (exactly what the agent sees)
+# and nothing else: no log, no metrics, no timing. Picks the deploy whose diff adds
+# a per-row query (an added `.objects.filter(` without `__in=`), else one that
+# disables a cache, else answers `db-primary` (it has no evidence to choose a
+# component, so it guesses). Ties go to the last-listed deploy.
+#
+# It scores 19/21: every deploy case is solvable from the diffs alone, and its only
+# misses are the two stripe cases its component guess can't reach. The timeline
+# shortcuts above top out at 14/21. Recorded as a finding (docs/plan.md, Findings);
+# the cases were NOT hardened, so the two-thirds guard is a strict xfail for it.
+
+def _per_row(diff):
+    return any(l.startswith("+") and ".objects.filter(" in l and "__in=" not in l for l in diff.splitlines())
+
+
+def _cache_off(diff):
+    return any(l.startswith("+") and re.search(r"#\s*@cached", l) for l in diff.splitlines())
+
+
+def diffs_only(c, ds, pick=lambda cand: cand[-1]):
+    from tools import CaseTools
+    t = CaseTools(c.dir)
+    diffs = {d["commit"]: t.handle("get_diff", {"commit": d["commit"]}) for d in ds}
+    for looks_defective in (_per_row, _cache_off):
+        cand = [d for d in ds if looks_defective(diffs[d["commit"]])]
+        if cand:
+            return say(pick(cand)["commit"])
+    return say("db-primary")
+
+
+DIFFS_ONLY_EXPECTED = {"regression": 4, "shifted": 3, "rolled_back": 3, "innocent_message": 3,
+                       "decoy": 4, "no_culprit": 2}
+
+
+def test_diffs_only_score_is_pinned(cases):
+    got = {f: 0 for f in DIFFS_ONLY_EXPECTED}
+    for c in cases:
+        got[c.family] += grade(diffs_only(c, deploys(c)), load_answer(c))["root_cause"]
+    assert got == DIFFS_ONLY_EXPECTED
+    # Tie-break sensitivity: taking the earliest per-row diff instead loses rb-early-n1 (18/21).
+    early = sum(grade(diffs_only(c, deploys(c), pick=lambda cand: cand[0]), load_answer(c))["root_cause"]
+                for c in cases)
+    assert early == 18
+
+
+@pytest.mark.xfail(strict=True, reason="finding: deploy cases are solvable from diffs alone (19/21); cases not hardened")
+def test_diffs_only_stays_under_two_thirds(cases):
+    total = sum(grade(diffs_only(c, deploys(c)), load_answer(c))["root_cause"] for c in cases)
+    assert total <= 14, total

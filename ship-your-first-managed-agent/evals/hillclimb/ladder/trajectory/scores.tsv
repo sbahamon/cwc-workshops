@@ -1,6 +1,6 @@
 id	split	baseline	v1	v2	v3	v4
 dc-before	test	1.000	1.000	1.000	1.000	1.000
-dc-after	test	1.000	0.500	1.000	1.000	1.000
+dc-after	test	1.000	1.000	1.000	1.000	1.000
 dc-cart-late	test	1.000	1.000	1.000	1.000	1.000
 dc-cart	test	1.000	1.000	1.000	1.000	1.000
 im-chore	train	1.000	1.000	1.000	1.000	1.000
@@ -16,7 +16,7 @@ rb-wrong-rollback	train	1.000	1.000	1.000	1.000	1.000
 reg-1440	val	1.000	1.000	1.000	1.000	1.000
 reg-500s	val	1.000	1.000	1.000	1.000	1.000
 reg-auth	val	1.000	1.000	1.000	1.000	1.000
-reg-verbatim	val	1.000	0.500	1.000	1.000	1.000
+reg-verbatim	val	1.000	1.000	1.000	1.000	1.000
 shift-early	train	1.000	1.000	1.000	1.000	1.000
 shift-late	train	1.000	1.000	1.000	1.000	1.000
 shift-morning	train	1.000	1.000	1.000	1.000	1.000

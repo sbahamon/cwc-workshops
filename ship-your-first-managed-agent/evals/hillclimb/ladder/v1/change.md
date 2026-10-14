@@ -13,3 +13,7 @@ Verdict (walk.py + shadow_regrade.py, 2026-10-14): **FAIL**, official and shadow
   keeps adding a second sentence ("Reverting it should ...").
 - Cost: $0.0374 list / $0.0375 rate card per incident (baseline $0.2407 / $0.2402): 6.4x cheaper.
 Walk: fail -> step right to claude-sonnet-5-5 at medium (canary first), after the round-0 diagnostic.
+
+Regrade (2026-10-14 morning, after the grader trailing-punctuation fix; docs/plan.md, Post-results
+changes): dc-after rep 1 and reg-verbatim rep 1 root_cause 0 -> 1. Now root_cause (train+test)
+100.0%, reg-verbatim [1, 1], format 61.9% unchanged. Verdict unchanged: **FAIL**, on format alone.

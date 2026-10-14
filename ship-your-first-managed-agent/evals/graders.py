@@ -63,7 +63,7 @@ def grade_root_cause(text: str, answer: dict) -> int:
         return 0
     ident = _identifier(body)
     if answer["kind"] == "deploy":
-        first = ident.split(" ", 1)[0]
+        first = ident.split(" ", 1)[0].rstrip(".,;:!?")  # "`a3f9c21`. The…" (bug fixed 2026-10-14)
         return int(bool(HEX.fullmatch(first)) and first[:7] == answer["culprit_short"])
     # No deploy at fault: any sha on the line is a wrong answer.
     if HEX.search(ident):
