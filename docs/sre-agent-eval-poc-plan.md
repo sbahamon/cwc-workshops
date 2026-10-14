@@ -2,7 +2,19 @@
 
 A follow-on lab to Anthropic's *Ship Your First Managed Agent* workshop that adds an eval, a model cost ladder, and one system-prompt hillclimb, built with the `claude-api` skill's `build-eval` and `hillclimb` commands.
 
-Author: Steffany Bahamon · Drafted October 13, 2026
+Author: Steffany Bahamon · Drafted October 13, 2026 · Updated October 14, 2026 with what actually happened (`docs/plan.md` is the detailed record)
+
+## Results
+
+| | Cost per incident (rate card) | Root cause, train+test | Held-out test root cause | Format | Floor |
+|---|---|---|---|---|---|
+| Opus 4.8, default effort (the workshop's model) | 24.02¢ | 100% (34/34) | 16/16 | 92.9% | baseline |
+| **Sonnet 5.5, low effort, climbed prompt** | **3.41¢** | 100% (68/68) | **32/32** | 97.6% | **passes with margin** |
+| Haiku 5.5, low effort, climbed prompt | 0.42¢ | 92.6% (63/68) | 27/32 | 95.2% | passes narrowly |
+
+- **Deployment recommendation: Sonnet 5.5 at low effort with the climbed system prompt**, 7× cheaper than Opus 4.8 and passing the pre-registered floor with margin.
+- **Haiku 5.5 at low effort is the walk's incumbent**, a narrow pass at 0.42¢: the cheapest cell that clears the floor, but only after the pre-registered confirmation run, and with every miss on held-out cases. It's the cost-optimal option once a prompt fix stops it dropping the bold root-cause label.
+- Full numbers and spend: [`COST_LEDGER.md`](../ship-your-first-managed-agent/evals/COST_LEDGER.md). Chart: [`results/path.png`](../ship-your-first-managed-agent/evals/results/path.png).
 
 ---
 
@@ -173,8 +185,8 @@ Model ladder pricing (per million input/output tokens, from the `claude-api` ski
 |---|---|
 | Generated incident variants built from the existing story | New bug-type generators, unless Haiku aces everything (no need for harder cases without evidence of saturation) |
 | Two code graders: format and root cause | LLM judge (the output is constrained, so a code check is cheaper and stable) |
-| Model ladder: Opus 4.8 → Opus 5.5 → Sonnet 5.5 → Haiku 5.5 | Fast mode, Fable/Mythos tiers (cost goes the wrong way) |
-| A small effort tier: Sonnet 5.5 and Haiku 5.5 at low, via agent versions (the probe confirmed effort works) | A full effort grid (more runs than the comparison needs) |
+| Model × effort staircase walk (the `claude-api` skill's `cost-hillclimb.md` Step 2), from Opus 4.8 down through Sonnet 5.5 to Haiku 5.5 | Opus 5.5 (excluded deliberately: cost, and to keep the story Opus 4.8 → Sonnet → Haiku); fast mode, Fable/Mythos tiers (cost goes the wrong way) |
+| Effort as part of the walk: each cell visited is one (model, effort) agent version (the probe confirmed effort works) | A full four-model grid or effort grid (the walk visits only the cells it needs) |
 | One system-prompt hillclimb on the cheapest viable model | Editing the runbook skill (it's the client's runbook; keep it fixed so attribution stays clean) |
 | Cost per case from session usage events | Hand-maintained price math as the source of truth |
 
@@ -237,27 +249,34 @@ Outputs: `results.jsonl` (one row per case and repetition), a trace file per run
 
 **Why:** The answer space is a small closed set (a hash from the deploy list, or a component name), so the blog says use the cheapest grader that fits: a code check. It's deterministic and free, so the "grade the same output twice" diagnostic passes trivially. Reporting format failures separately matters: if Haiku forgets the line, you can tell "didn't write the line" apart from "found the wrong commit," and the hillclimb aims at the right problem.
 
-### Change 5 — Model ladder, plus a small effort tier
+### Change 5 — A model × effort staircase walk
 
-**What:** Run the baseline on all four models at their default effort, with one agent version per model.
+**What happened:** instead of running all four models at default effort, the lab walks the skill's staircase (`shared/evals/cost-hillclimb.md` Step 2) against a floor pre-registered before any result: root cause on train+test within 10 points of the Opus 4.8 baseline, the original incident right on every rep, and format ≥ 95%. Opus 5.5 is excluded deliberately (cost, and to keep the story Opus 4.8 → Sonnet → Haiku).
 
-- Ask `build-eval` to report the confidence interval, the headroom check, and whether stronger models score higher, which is the blog's first sign of a healthy eval.
-- **Effort tier:** add Sonnet 5.5 and Haiku 5.5 at low effort, each as its own agent version. The probe confirmed effort takes effect on Managed Agents. Add more effort levels only if the ladder leaves the target model unclear.
+- **Baseline:** Opus 4.8 at default effort (it reports `xhigh` on Managed Agents).
+- **Round-0 diagnostic, off the path:** Opus 4.8 at low effort, to check the effort dial is alive. It is: output tokens fell 4,371 → 1,735 per session.
+- **Entry:** Sonnet 5.5 at low. It failed on format only, as did one and two notches right (medium, high). More effort made format worse.
+- **After the prompt climb (Change 6):** Sonnet 5.5 low passed, and the walk stepped down to Haiku 5.5 low with the same prompt, which passed narrowly after the pre-registered confirmation run.
 
-**Why:** This is the blog's cost example (Opus 4.8 at high effort → Opus 5.5 at low → Sonnet 5 at low), extended one step down. Default effort is what a client gets out of the box, so it's a defensible comparison even without the effort sweep. If Haiku 5.5 scores the same as Opus 4.8, the cases are too easy and need the harder generators. If Opus is around 95% or higher, the skill will itself recommend a cost goal, which is the plan.
+**Why:** the walk visits only the cells a decision needs, which is the skill's procedure and the blog's cost example (Opus 4.8 at high effort → a cheaper model at low → prompt edits). Every cheaper cell matched Opus 4.8 on root cause; what separated them was the format rule.
 
-### Change 6 — One system-prompt hillclimb, for accuracy, on the cheapest viable model
+### Change 6 — One system-prompt hillclimb on the cheapest viable model
 
-**What:** Choose the cheapest model that comes close to the Opus baseline. Then run `/claude-api hillclimb` with:
+**What happened:** the target was Sonnet 5.5 at low effort, the walk's entry cell. Root cause was already saturated at 100%, so the working target was **format**, with root cause held. **One round, kept after a confirmation run:**
 
-- **Goal:** accuracy on that model, with cost held at its ladder level.
-- **In scope:** the system prompt only. Model and effort are fixed at the target chosen from the ladder.
-- **Off limits:** the runbook skill, the tool code, and the graders.
-- **Harness paths** (the runner, generator, and graders) registered so the integrity check stops any round that edits them.
+- **The change:** a fresh analyzer, given only train-split transcripts, found the root-cause line written as two sentences. One `system.md` change followed: the line is one sentence, written once, last, with anything else on its own line above.
+- **First run:** format 40/42 (95.2%), right at the bar, so the pre-registered within-noise rule required a confirmation run.
+- **Confirmation run:** 42/42. That gives 82/84 (97.6%) over 4 reps, with root cause 68/68 and 32/32 on held-out test.
+
+The setup was as planned:
+
+- **In scope:** the system prompt only. Model and effort were fixed at the target.
+- **Off limits:** the runbook skill, the tool code and the graders.
+- **Harness paths** (the runner, generator and graders) were registered, so the integrity check stops any round that edits them.
 - **Split:**
   - **Train:** shifted, rolled-back, and innocent-message families.
   - **Test:** whole held-out families, decoy and no-culprit.
-  - **Regression check:** the original family must stay passing every round, but isn't scored as generalization.
+  - **Regression check:** the original family, which must stay passing every round but isn't scored as generalization.
 
 **Why:** This mirrors the last step of the blog's cost example, where prompt edits on the cheaper model took it from 88.9% to 98.9%. A five-line system prompt is cheap to change and easy to attribute, which is what the blog says suits hillclimbing. Holding out whole families tests generalization rather than memorization.
 
@@ -275,7 +294,7 @@ The original stays out of the test set for three reasons:
 - **Cost control.**
   - Run a one-case pilot first to measure real cost per session.
   - Set a budget on every session.
-  - Pre-record the results for all four models so the live lab never has to rerun Opus.
+  - Pre-record the results for every walk cell and hillclimb round so the live lab never has to rerun Opus.
 - **Rate limits in a live room.** Managed Agents has per-organization request limits, so the facilitator guide includes the pre-recorded fallback.
 - **Beta API drift.** Managed Agents is in beta. Every model ID, field, and parameter used gets an entry in SOURCES.md with its docs page, so the next release cycle's update is a checklist rather than a rediscovery.
 
@@ -305,18 +324,20 @@ Each deliverable is mapped to the job requirements and to the LinkedIn post's se
   2. Find and fix the `e2e.py` grader flaw: a transcript the old check passed now correctly fails.
   3. Write `session_cost`; a pilot case prints its tokens and dollars.
   4. Swap the config to Haiku 5.5 at low effort; one case runs on it.
-  5. Run the model ladder (or load the recorded results) and read accuracy versus cost per incident.
+  5. Run the model ladder (or load the recorded results) and read the cost-reduction path chart (accuracy versus cost per incident).
+
+  The final checkpoint list, with expected outputs, is the one in `docs/plan.md` (Phase 9).
 - stretch for fast finishers: one `/claude-api hillclimb` round
 - learners write two small functions plus a one-line config swap, mirroring the original's seven-function shape
 
 **Why:**
-- *Post criteria 2 and 4 (approachable, fun):* the repo does the setup, learners write only the interesting part, and the payoff is a table where accuracy holds while cost per incident drops one model at a time.
+- *Post criteria 2 and 4 (approachable, fun):* the repo does the setup, learners write only the interesting part, and the payoff is the path chart, where accuracy holds while cost per incident drops one step at a time.
 - *Post criterion 3 (complete):* it covers eval concepts in the order the blog introduces them: cases, grader validation, baseline, headroom, split, hillclimb, overfitting.
 - *TCD:* "strong technical writing and instructional design."
 
 ### D3 — Reference solution and pre-recorded results
 
-**Contents:** `runner_complete.py` and `graders_complete.py`, plus a `results/` folder with real runs for all four models and the hillclimb rounds (traces, `results.jsonl`, `report.html`).
+**Contents:** `runner_complete.py` and `graders_complete.py`, plus a `results/` folder with real runs for every walk cell and the hillclimb round (traces, `results.jsonl`, `report.html`) and the path chart (`results/path.svg`/`.png`).
 
 **Why:**
 - *Post criterion 5 (a way back):* anyone stuck, out of budget, or rate-limited can follow along from recorded results without stopping the room.
@@ -362,7 +383,7 @@ Each deliverable is mapped to the job requirements and to the LinkedIn post's se
 **Contents:** a recorded delivery of one checkpoint, not a tour of the repo.
 
 - **Segment 1 (about 3 minutes):** the grader-validation moment. Show that the original `e2e.py` check can pass without the agent concluding the right commit, explain why that matters for anyone deciding which model to ship, and fix it live with the two new graders.
-- **Segment 2 (about 2 minutes):** run the model ladder from pre-recorded results and read the accuracy-versus-cost table.
+- **Segment 2 (about 2 minutes):** run the model ladder from pre-recorded results and read the cost-reduction path chart.
 - **Segment 3 (about 1 minute):** what changes when the learner points the runner at their own agent.
 
 **Why:**
@@ -384,12 +405,14 @@ Each deliverable is mapped to the job requirements and to the LinkedIn post's se
 
 ### Timeline
 
-| When | Milestone |
-|---|---|
-| Tue Oct 13 (done) | Effort probe run ($0.13); fork created; SDK drift fixed and pinned; `e2e.py` smoke test passed on Opus 4.8 (about 3 minutes, $0.22) |
-| Tue evening | Smoke-run `e2e.py`; Change 1; Claude Code plan approved; Changes 2–4 + tests (D1, D4); pilot cost; Tier 1 ladder started in the background |
-| Wed morning | `build-eval` review and baseline; Tier 2 (effort) in the background; target model chosen |
-| Wed midday | Hillclimb on the target model's system prompt |
-| Wed afternoon | README checkpoints, reference solution, recorded results, SOURCES.md, cost ledger, facilitator guide (D2, D3, D5, D6) |
-| Wed evening | Rehearse on a fresh clone; video (D7) and one-pager (D8) |
-| Thu Oct 15 | First interview, with everything above done. Full schedule and cut order are in `docs/BUILD_BRIEF.md`. |
+**Done (as of Wed Oct 14 evening).** The build, the walk and the hillclimb are complete. The teaching layer (D2, D3, D5 final, D6, D7, D8) moved to a separate session, `docs/plan.md` Phase 9.
+
+| When | Milestone | Status |
+|---|---|---|
+| Tue Oct 13 | Effort probe run ($0.13); fork created; SDK drift fixed and pinned; `e2e.py` smoke test passed on Opus 4.8 (about 3 minutes, $0.22) | done |
+| Tue evening | Smoke-run `e2e.py`; Change 1; Claude Code plan approved; Changes 2–4 + tests (D1, D4); pilot cost; ladder started in the background | done |
+| Wed morning | `build-eval` review and baseline; staircase walk; target model chosen | done |
+| Wed midday | Hillclimb on the target model's system prompt | done (one round, kept) |
+| Wed afternoon | README checkpoints, reference solution, recorded results, SOURCES.md, cost ledger, facilitator guide (D2, D3, D5, D6) | cost ledger and SOURCES.md done; the rest moved to Phase 9 |
+| Wed evening | Rehearse on a fresh clone; video (D7) and one-pager (D8) | moved to Phase 9 |
+| Thu Oct 15 | First interview. Full schedule and cut order are in `docs/BUILD_BRIEF.md`. | — |

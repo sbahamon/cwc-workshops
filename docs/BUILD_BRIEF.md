@@ -1,3 +1,5 @@
+> **Status (2026-10-14):** historical brief, kept as written. `docs/plan.md` supersedes it wherever they differ.
+
 # Build brief: "Your SRE agent works. Now make it cheap."
 
 For: a Claude Code plan-mode session in Steffany's fork of `anthropics/cwc-workshops`.
