@@ -122,6 +122,8 @@ All nine workshops in `cwc-workshops` were reviewed for whether they could suppo
 - **`e2e.py`** runs the full path headlessly and passes if the transcript contains both "n+1" and `a3f9c21` anywhere. This grader is the first teaching moment, because it's both too lenient and too strict:
   - **Too lenient.** `get_recent_deploys` returns every commit hash, so the right hash can show up just by recapping deploys. "N+1" can show up as one hypothesis among several. The agent doesn't have to actually *conclude* `a3f9c21` to pass.
   - **Too strict.** A correct answer that says "per-row query" instead of "N+1" fails.
+- **The workshop no longer ran on the current SDK (found Oct 13).** `requirements.txt` only says `anthropic>=0.97.0`, and the current SDK (1.13.0) renamed `skills.create`'s `display_title` parameter to `display_name`. `e2e.py` and `agent_complete.py` crashed with a `TypeError`, and the hint in `agent.py` taught the old name. Fixed with a three-file rename, plus pinning `anthropic==1.13.0` so the next SDK release can't break the lab again.
+- **Smoke test after the fix:** `e2e.py` passed on Opus 4.8 in about 3 minutes, at $0.22 for the session. The agent followed the runbook in order (deploys, then metrics, then diff, then log search to confirm) and ended with the root-cause line inside a Markdown blockquote (`> **Root cause:** ...`). The new grader has to handle that.
 - **Model and prompt are duplicated.** The model is hardcoded to `claude-opus-4-8` in both `agent_complete.py` and `e2e.py`. `e2e.py` also keeps its own shorter copy of the system prompt and tool list instead of importing them from `provided.py`.
 
 **Implication.** As shipped, there's one case and the model almost certainly solves it, so there's no headroom and no eval. The runbook supplies both the scenario catalog and the grading target, so nothing has to be invented.
@@ -348,6 +350,7 @@ Each deliverable is mapped to the job requirements and to the LinkedIn post's se
 - the talk track for the `e2e.py` grader moment
 - what to say when Haiku fails a case
 - the recovery plan if Managed Agents is slow or rate-limited (switch to pre-recorded results)
+- known setup problems, both hit while building this lab: projects inside an iCloud-synced folder (Desktop or Documents) can hang on `import anthropic` because iCloud offloads `.venv` files to the cloud, so clone into a folder like `~/code`; and an API key not scoped to a workspace fails with a 400 asking for the `anthropic-workspace-id` header
 - a short "ready to teach this" checklist another instructor can use to self-assess before delivering
 
 **Why:**
@@ -383,7 +386,7 @@ Each deliverable is mapped to the job requirements and to the LinkedIn post's se
 
 | When | Milestone |
 |---|---|
-| Tue Oct 13 (done) | Effort probe run ($0.13); fork created |
+| Tue Oct 13 (done) | Effort probe run ($0.13); fork created; SDK drift fixed and pinned; `e2e.py` smoke test passed on Opus 4.8 (about 3 minutes, $0.22) |
 | Tue evening | Smoke-run `e2e.py`; Change 1; Claude Code plan approved; Changes 2–4 + tests (D1, D4); pilot cost; Tier 1 ladder started in the background |
 | Wed morning | `build-eval` review and baseline; Tier 2 (effort) in the background; target model chosen |
 | Wed midday | Hillclimb on the target model's system prompt |

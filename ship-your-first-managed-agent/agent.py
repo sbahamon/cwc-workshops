@@ -18,8 +18,8 @@ client = anthropic.Anthropic()
 
 # ── 1. Agent ──────────────────────────────────────────────────────────────
 # What the agent IS: model, system prompt, tools, skills. Create once, reuse forever.
-# Hint: client.beta.skills.create(display_title=..., files=files_from_dir(...))
-#       then client.beta.agents.create(..., skills=[...]). display_title must be
+# Hint: client.beta.skills.create(display_name=..., files=files_from_dir(...))
+#       then client.beta.agents.create(..., skills=[...]). display_name must be
 #       unique per org — suffix it with uuid like setup_environment() does.
 @st.cache_resource
 def setup_agent() -> str:

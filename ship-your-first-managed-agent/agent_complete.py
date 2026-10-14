@@ -17,11 +17,11 @@ client = anthropic.Anthropic()
 # ── 1. Agent ──────────────────────────────────────────────────────────────
 @st.cache_resource
 def setup_agent() -> str:
-    # display_title must be unique per organization, so suffix it the same way
+    # display_name must be unique per organization, so suffix it the same way
     # setup_environment() does — a second run, or a second person on the same
-    # workspace, otherwise fails with "Skill cannot reuse an existing display_title".
+    # workspace, otherwise fails with "Skill cannot reuse an existing display_name".
     skill = client.beta.skills.create(
-        display_title=f"Incident Triage Runbook {uuid.uuid4().hex[:6]}",
+        display_name=f"Incident Triage Runbook {uuid.uuid4().hex[:6]}",
         files=files_from_dir("incident-triage-runbook"),
     )
     agent = client.beta.agents.create(

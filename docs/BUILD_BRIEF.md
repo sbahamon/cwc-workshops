@@ -44,6 +44,7 @@ The brief was written without access to the running repo. Check each claim, and 
 2. `data/generate_log.py` writes only `app.log`. It's seeded (42) and hardcodes the one scenario. `metrics.json`, `deploys.json` and `diff.txt` are static fixtures.
 3. `get_diff` serves only `diff.txt`, and returns "no diff" unless the requested commit's first 7 characters appear in it.
 4. The model is hardcoded to `claude-opus-4-8` in `agent_complete.py` and `e2e.py`. `e2e.py` keeps its own `SYSTEM` and `TOOLS` instead of importing them from `provided.py`.
+4a. The SDK is pinned to `anthropic==1.13.0`, and `skills.create` takes `display_name` (renamed from `display_title`; fixed in all three files on this branch). Build against this SDK version.
 
 **About Managed Agents**
 
@@ -91,6 +92,7 @@ The brief was written without access to the running repo. Check each claim, and 
 - `format`: the `**Root cause:**` line is present and is one sentence.
 - `root_cause`: the commit or component parsed from that line equals the answer key.
   - Accept a 7- or 40-character hash, with or without backticks or bold.
+  - Accept the line with Markdown wrapping around it. In the real smoke-test run, Opus 4.8 wrote it inside a blockquote: `> **Root cause:** `a3f9c21` — ...`. Add that exact line as a unit-test fixture.
   - On no-culprit cases, require a component name and reject any commit hash.
 - Report-only (not gated): runbook order, tool calls, tokens, cost, latency.
 - No LLM judge.
@@ -130,6 +132,8 @@ The brief was written without access to the running repo. Check each claim, and 
 That's about 10–12 cases. The test families each check a different reasoning step from the train families, so a prompt change that only memorizes the train cases won't carry over. No-culprit also covers the opposite failure: an agent that always blames the nearest deploy shouldn't score well. Expect the skill's noise check to ask for more repetitions; use 2–3.
 
 ## Run plan and budget gates
+
+**Known data point** (smoke test, Oct 13): the original `e2e.py` on Opus 4.8 with the full 70k-line log took about 3 minutes and cost $0.22 per session.
 
 **Gate 0. Pilot.** Run the regression case once each on Opus 4.8 and Haiku 5.5. Print the measured cost per session and the wall time. Estimate every later tier from these numbers, never from guesses.
 
@@ -173,7 +177,7 @@ Run grids in the background (the skill's pattern) while working on the teaching 
 
 | When | Phase | Done when |
 |---|---|---|
-| Tue evening, first ~hour | Key and probe (done), fork (done), smoke-run `e2e.py`, Change 1, plan mode, plan approved | `e2e.py` passes on the fork; `docs/plan.md` approved |
+| Tue evening, first ~hour | Key and probe (done), fork (done), SDK fix + pin and smoke test (done: PASS, about 3 minutes, $0.22), Change 1, plan mode, plan approved | `docs/plan.md` approved |
 | Tue evening | Changes 2–4 + tests; Gate 0 pilot | `uv run pytest` green; pilot cost printed |
 | Tue late | Launch Tier 1 in the background | Rows landing in `baseline/` and variant directories |
 | Wed morning | `/claude-api build-eval` review: inputs page, grader check, baseline + CI; Tier 2 in the background | Baseline score + noise estimate; ladder table |
