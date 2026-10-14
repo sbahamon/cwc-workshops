@@ -284,7 +284,7 @@ Paths are relative to `ship-your-first-managed-agent/`. Every acceptance check i
 ### Phase 9: teaching layer (no new spend)
 - `evals/lab/` (stubs: `grade_root_cause`, `session_cost`, plus a one-line config swap) and `evals/lab_complete/`.
 - `evals/results/`: a snapshot of the ladder and climb, without bulk traces unless you want them.
-- `evals/README.md`: story, five checkpoints with expected-output blocks, a one-command demo that runs on recorded results with no key, and credit to Gagan Bhat's original (Apache-2.0).
+- `evals/README.md`: near the top, the **"Two meanings of 'harness'"** note (agent harness vs eval harness; text in `evals/FACILITATOR_NOTES.md`), then story, five checkpoints with expected-output blocks, a one-command demo that runs on recorded results with no key, and credit to Gagan Bhat's original (Apache-2.0).
 - `FACILITATOR_GUIDE.md`, the final `SOURCES.md`, and a session log appended to `docs/plan.md`.
 - D6 and D8 each include a **"What I found in the original lab"** section covering every item in **Findings to carry into the write-ups** (below).
 - **Accept:** every Findings item, and the shortcut-agent lesson with its numbers (timeline 17/21 → 11/21; diffs-only 19/21), appears in both D6 and D8; on a fresh clone with no API key, `uv run pytest` passes; every checkpoint's expected output reproduces from `results/`; the original lab smoke test passes.
@@ -332,6 +332,15 @@ Both D6 and D8 get a section titled **"What I found in the original lab."** Ever
 - **No walk verdict changes.** v1 Sonnet 5.5 low goes from root_cause (train+test) 97.1% → 100.0% and reg-verbatim [1, 0] → [1, 1]; its verdict stays **FAIL**, now on format alone (61.9%). Before the fix it failed reg-verbatim and format; after, format only. Baseline, v2, v3 and v4 are unchanged (`uv run python walk.py`). The walk's path and stopping point are therefore the same, and `results/path.svg`/`.png` and `ladder/report.html` were regenerated from the regraded rows.
 - **Harness.** `graders.py` is a harness path, so the harness sha changed and every run exits 2 until Steffany runs `--approve-harness`. `shadow_regrade.py` is kept as the record of the overnight check; with the fix applied it now agrees with the official grades by construction.
 
+### Eval-harness approval history
+
+Approved at three fingerprints (the `harness_sha` in `_state.json`):
+1. `9f02ee7a8a03`: before the pilot (Phase 5).
+2. `64ecf9d86b32`: after the watchdog fix and `pricing.py`, still before any ladder result (commit `788bb90`).
+3. `c808e86bdb6d`: after the grader trailing-punctuation fix, the only change made after results existed. Both `hillclimb/ladder` and `hillclimb/climb` were approved at this fingerprint (Steffany, 2026-10-14).
+
+The post-results change was safe because grading is recomputed from saved transcripts: what the agent saw didn't change. Hardening the cases (the diffs-only finding) was declined because it would change what the agent sees, so every existing result would measure a different test.
+
 ### Operating rule: run cells sequentially (registry race, not fixed)
 
 Two concurrent `run.py` processes race on the shared `.registry.tmp` (Session log, Phase 6). Steffany's decision (2026-10-14): no code change; **run one `run.py` process at a time**, one cell after another. Within a cell, `--concurrency` (threads in one process) is safe, because the in-process lock covers it. This rule also goes in the facilitator notes (`evals/FACILITATOR_NOTES.md`, folded into D6 in Phase 9).
@@ -362,3 +371,4 @@ Two concurrent `run.py` processes race on the shared `.registry.tmp` (Session lo
 - 2026-10-14, for Phase 8 setup: while auditing v1–v4 failures this session saw the root-cause lines (one line each, the grader's view) of some test-split rows. The climb's analyzer must therefore be a fresh subagent given train traces only (eval-hillclimb Step 4), not this session writing `change.md` from memory.
 - 2026-10-14 (morning, Steffany's decisions; no API spend): grader trailing-punctuation fix applied and every stored row regraded in place (2 rows changed, both in v1; no walk verdict changed; see Post-results changes). Registry race: documented as "run cells sequentially", no code change. Format floor kept at ≥ 95% as pre-registered; the baseline's own 92.9% recorded as a write-up lesson. Diffs-only shortcut run offline: **19/21** (timeline shortcut 11/21), pinned in `tests/test_shortcuts.py`; recorded in Findings, cases not hardened. Harness sha changed (graders.py); waiting for Steffany's `--approve-harness` before Phase 8.
 - 2026-10-14 (Steffany): harness re-approval reported. Climb baseline = 42 regraded rows copied from `ladder/v1` (reason in Phase 8). `hillclimb/climb/_state.json` written; waiting for its `--approve-harness`. Console billing check, before any Haiku ladder result: Haiku billed $0.01 vs 6¢ `list_cost` / 1.35¢ rate card → recorded in SOURCES.md; path chart x axis switched to rate-card cost (largest shift 2.2%, v3), `list_cost` in labels, cap unchanged on `list_cost`.
+- 2026-10-14: Both `_state.json` files approved at `c808e86bdb6d` (Steffany). Terminology note ("two meanings of 'harness'") and talk-track added to `evals/FACILITATOR_NOTES.md` and to Phase 9's README checklist; approval history added under Post-results changes. Phase 8 round 1 next.

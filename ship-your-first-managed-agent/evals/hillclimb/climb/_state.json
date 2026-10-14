@@ -122,5 +122,6 @@
     }
   ],
   "baseline_provenance": "42 rows copied from hillclimb/ladder/v1 (Steffany, 2026-10-14): the only harness change since they ran was the one-line graders.py fix, and those rows were regraded with it from their saved transcripts (regrade.py), so a re-run would be graded identically; rows carry meta.copied_from, so spend.py doesn't count them twice",
-  "rounds": []
+  "rounds": [],
+  "harness_sha": "c808e86bdb6d04f19d7590b2862192c74c4fae6ff66e530940f33ab33e9f15f3"
 }

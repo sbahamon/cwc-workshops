@@ -140,7 +140,7 @@
       "why": "v3 failed -> second and last notch right"
     }
   ],
-  "harness_sha": "64ecf9d86b32fa4c42dc1fcd1d7efa38429f263cd402ac82903ef40f9edbc1e3",
+  "harness_sha": "c808e86bdb6d04f19d7590b2862192c74c4fae6ff66e530940f33ab33e9f15f3",
   "walk_status": {
     "stopped": "2026-10-14",
     "reason": "no cell cleared the floor; Sonnet row exhausted after two notches right; tier monotonicity presumes Haiku fails at the same effort; the only extension tier (Opus 5.5) is excluded; the $20 overnight stop was also reached ($19.96)",
