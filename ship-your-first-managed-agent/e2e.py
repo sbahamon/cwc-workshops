@@ -11,29 +11,12 @@ import anthropic
 from anthropic.lib import files_from_dir
 from dotenv import load_dotenv
 
+from config import SYSTEM, TOOLS, model_param
+
 load_dotenv()
 HERE = Path(__file__).parent
 DATA = HERE / "data"
 client = anthropic.Anthropic()
-
-SYSTEM = (
-    "You are the SRE Agent, an SRE/data-analyst agent. Analyze "
-    "/mnt/session/uploads/app.log (large — use grep/python), pull metrics and deploys "
-    "via your tools, inspect suspicious diffs, and state the root cause plainly."
-)
-TOOLS = [
-    {"type": "agent_toolset_20260401", "default_config": {"enabled": True}},
-    {"type": "custom", "name": "get_metrics",
-     "description": "Timeseries for service+metric.",
-     "input_schema": {"type": "object",
-                      "properties": {"service": {"type": "string"}, "metric": {"type": "string"}},
-                      "required": ["service", "metric"]}},
-    {"type": "custom", "name": "get_recent_deploys", "description": "Deploys last 6h.",
-     "input_schema": {"type": "object", "properties": {}}},
-    {"type": "custom", "name": "get_diff", "description": "Diff for a commit.",
-     "input_schema": {"type": "object", "properties": {"commit": {"type": "string"}},
-                      "required": ["commit"]}},
-]
 
 metrics = json.loads((DATA / "metrics.json").read_text())
 deploys = (DATA / "deploys.json").read_text()
@@ -56,7 +39,7 @@ skill = client.beta.skills.create(
     files=files_from_dir(HERE / "incident-triage-runbook"),
 )
 agent = client.beta.agents.create(
-    name="SRE Agent", model="claude-opus-4-8", system=SYSTEM, tools=TOOLS,
+    name="SRE Agent", model=model_param(), system=SYSTEM, tools=TOOLS,
     skills=[{"type": "custom", "skill_id": skill.id, "version": "latest"}],
 )
 # 2. Environment

@@ -1,0 +1,44 @@
+skill=skill_01A3X6bq88FQPKFykbNd7dVY agent=agent_015NJbtY5YQzqeRbz6vmQSYE env=env_012zj1zHgZmK1yYDUZEiy1p4 session=sesn_01Vy3PfLW7MwY35zqBcV6Reg
+I'll start by reading the incident triage runbook, then investigate.
+[sandbox · read]
+I'll follow the runbook. Step 1: pull recent deploys, and line them up against checkout's p99/error metrics.
+[local · get_recent_deploys] -> [
+  {
+    "ts": "2026-04-22T09:14:05Z",
+    "service": "cart",
+    "commit": "e21b6c9",
+    "author"
+
+[local · get_metrics] -> [{"ts": "2026-04-22T14:00:00Z", "value": 62.448}, {"ts": "2026-04-22T14:01:00Z", "value": 58.47}, {"
+
+[local · get_metrics] -> [{"ts": "2026-04-22T14:00:00Z", "value": 0.002}, {"ts": "2026-04-22T14:01:00Z", "value": 0.002}, {"t
+The checkout deploy at 14:31:18 (`a3f9c21`) lines up precisely: p99 is flat ~60ms through 14:31, then jumps to 347ms at 14:32 and climbs into multi-second territory. Step 3: pull the diff.
+[local · get_diff] -> commit a3f9c21e8b4d2f1a9c0e7d3b5f8a2c4e6d9b1f0a
+Author: Alice Chen <alice@shop.io>
+Date:   Wed Apr 2
+This is the N+1 pattern — the #1 item on the runbook's "things that have burned us" list. The old code did one batched query (`order_id__in=order_ids`) then grouped in memory; the new code fires a separate `OrderItem` query per order inside the loop. Step 4: grep the log to confirm the per-order queries started firing at the deploy.
+[sandbox · bash]
+Let me confirm these per-order queries were absent *before* the 14:31 deploy (to rule out a pre-existing pattern), and sanity-check the timestamp format.
+[sandbox · bash]
+Confirmed. The first per-order query appears at `14:31:18.144Z` — the exact deploy timestamp — with zero occurrences beforehand. Note the two sample lines share one `request_id` (`req_030ba30eb081`), the signature of N+1. Let me quantify the per-request fan-out.
+[sandbox · bash]
+Evidence is consistent end to end. Here's the triage.
+
+**Timeline**
+- 14:31:18 — checkout deploy `a3f9c21` ("refactor order summary builder for readability") lands.
+- 14:32 — checkout p99 jumps from flat ~60 ms to 347 ms, then climbs to 2–3.6 s and stays there.
+- 14:31:18.144Z — first-ever `SELECT * FROM order_items WHERE order_id = ?` query appears; zero such lines before the deploy.
+
+**Mechanism**
+The diff replaced a single batched query with a per-order loop — a textbook N+1:
+- Before: one query `OrderItem.objects.filter(order_id__in=order_ids)`, grouped in memory.
+- After: `for order in orders: OrderItem.objects.filter(order_id=order.id)` — one DB round-trip per open order.
+
+Log confirms it: each checkout request now fans out to ~16 `order_items` queries under one `request_id` (30,964 such queries after the deploy, avg ~13.5 ms each). The per-request serial round-trips are what inflate p99 into the seconds range. (The secondary error-rate bump to ~0.1 at 14:40 is downstream fallout from requests backing up / timing out, not a separate cause.)
+
+**Fix:** revert `a3f9c21` or restore the batched `order_id__in` query with in-memory grouping.
+
+> **Root cause:** `a3f9c21` — refactor swapped a single batched `order_id__in` query for a per-order query inside a loop (N+1), multiplying DB round-trips per checkout request and driving p99 from ~60 ms to multiple seconds.
+-- end_turn --
+
+verdict: PASS

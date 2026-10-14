@@ -10,29 +10,9 @@ from pathlib import Path
 
 import streamlit as st
 
+from config import SYSTEM, TOOLS  # noqa: F401  (re-exported for agent.py)
+
 DATA = Path("data")
-
-SYSTEM = """\
-You are the SRE Agent — an SRE/data-analyst agent embedded in an incident
-dashboard. The application log is mounted at /mnt/session/uploads/app.log (large; use
-grep/python to analyze it, don't read it whole). You have local tools that
-query the same data the dashboard shows. Correlate evidence and state findings
-plainly and concisely.
-"""
-
-TOOLS = [
-    {"type": "agent_toolset_20260401", "default_config": {"enabled": True}},
-    {"type": "custom", "name": "get_metrics",
-     "description": "Timeseries for a service+metric over the incident window.",
-     "input_schema": {"type": "object",
-                      "properties": {"service": {"type": "string"}, "metric": {"type": "string"}},
-                      "required": ["service", "metric"]}},
-    {"type": "custom", "name": "get_recent_deploys", "description": "Deploys in the last 6h.",
-     "input_schema": {"type": "object", "properties": {}}},
-    {"type": "custom", "name": "get_diff", "description": "Unified diff for a commit SHA.",
-     "input_schema": {"type": "object", "properties": {"commit": {"type": "string"}},
-                      "required": ["commit"]}},
-]
 
 metrics = json.loads((DATA / "metrics.json").read_text())
 deploys = (DATA / "deploys.json").read_text()

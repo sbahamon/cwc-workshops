@@ -9,6 +9,7 @@ import anthropic
 import streamlit as st
 from anthropic.lib import files_from_dir
 
+from config import model_param
 from provided import DATA, SYSTEM, TOOLS, deploys, diff, metrics
 
 client = anthropic.Anthropic()
@@ -26,7 +27,7 @@ def setup_agent() -> str:
     )
     agent = client.beta.agents.create(
         name="SRE Agent",
-        model="claude-opus-4-8",
+        model=model_param(),
         system=SYSTEM,
         tools=TOOLS,
         skills=[{"type": "custom", "skill_id": skill.id, "version": "latest"}],
