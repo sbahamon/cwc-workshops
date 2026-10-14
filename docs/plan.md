@@ -286,7 +286,7 @@ Paths are relative to `ship-your-first-managed-agent/`. Every acceptance check i
 - `evals/README.md`: story, five checkpoints with expected-output blocks, a one-command demo that runs on recorded results with no key, and credit to Gagan Bhat's original (Apache-2.0).
 - `FACILITATOR_GUIDE.md`, the final `SOURCES.md`, and a session log appended to `docs/plan.md`.
 - D6 and D8 each include a **"What I found in the original lab"** section covering every item in **Findings to carry into the write-ups** (below).
-- **Accept:** every Findings item, and the shortcut-agent lesson with both numbers (17/21 → 11/21), appears in both D6 and D8; on a fresh clone with no API key, `uv run pytest` passes; every checkpoint's expected output reproduces from `results/`; the original lab smoke test passes.
+- **Accept:** every Findings item, and the shortcut-agent lesson with its numbers (timeline 17/21 → 11/21; diffs-only 19/21), appears in both D6 and D8; on a fresh clone with no API key, `uv run pytest` passes; every checkpoint's expected output reproduces from `results/`; the original lab smoke test passes.
 
 **Cut order if behind:**
 1. walk cells beyond entry plus one step
