@@ -90,6 +90,16 @@ def test_case_json_carries_no_ground_truth(cases):
 
 
 def test_system_prompt_starts_as_the_shipped_prompt():
+    """Every baseline ran on the shipped prompt; the live system.md is either that prompt
+    or a recorded hillclimb round's snapshot (hillclimb/climb/vN/system.md)."""
     sys.path.insert(0, str(EVALS.parent))
     import config
-    assert (EVALS / "prompts" / "system.md").read_text() == config.SYSTEM
+    from run import sha256
+    shipped = sha256(config.SYSTEM)[:16]
+    for flow in ("ladder", "climb"):
+        rows = (EVALS / "hillclimb" / flow / "baseline" / "results.jsonl")
+        if rows.exists():
+            assert {json.loads(l)["meta"]["system_sha"] for l in rows.read_text().splitlines()} == {shipped}
+    live = (EVALS / "prompts" / "system.md").read_text()
+    snapshots = [p.read_text() for p in (EVALS / "hillclimb" / "climb").glob("v*/system.md")]
+    assert live == config.SYSTEM or live in snapshots
