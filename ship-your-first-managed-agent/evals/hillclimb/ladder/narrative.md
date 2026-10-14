@@ -5,7 +5,17 @@
 - **Haiku 5.5 low (v5), the cheapest cell that passes: 0.42¢ per incident at the rate card (1.79¢ list) versus 24.02¢ (24.07¢), 57× cheaper at the rate card (13× on list cost).** It passes narrowly, after the pre-registered confirmation run: root cause 63/68 = 92.6% (needs ≥ 90.0%), format 80/84 = 95.24% (needs ≥ 95%, so exactly one row of margin), `reg-verbatim` 4/4. Both are still within noise. Every miss is on held-out test cases (root cause 27/32 on test). Four of its five root-cause misses name the right answer but drop the bold `**Root cause:**` label; the fifth blames an innocent deploy on a no-culprit case. Its first two reps failed (30/34, 39/42); reps 3–4 scored 33/34 and 41/42.
 - **Sonnet 5.5 low (climb/v1), the cheapest cell that passes with margin: 3.41¢ (3.33¢), 7.0× cheaper.** Root cause 68/68 (test 32/32), format 82/84 = 97.6%, `reg-verbatim` 4/4.
 
-Haiku is the bottom of the grid, so the walk ends here. Adopting Haiku over climbed Sonnet, or trying Haiku medium first, is Steffany's call.
+Haiku is the bottom of the grid, so the walk ends here, with Haiku 5.5 low as the walk's incumbent (Steffany's decision; no Haiku medium).
+
+## Deployment recommendation
+
+Separate from the walk's incumbent (Haiku 5.5 low, a narrow pass, as recorded; the walk ends there and Haiku medium was not run, Steffany's decision 2026-10-14):
+
+- **Deploy climbed Sonnet 5.5 low** (`hillclimb/climb/v1`). It passes the floor with margin: root cause 68/68 on train+test including **32/32 on held-out test**, format 97.6%, `reg-verbatim` 4/4, at 3.41¢ per incident at the rate card (3.33¢ list) versus 24.02¢ (24.07¢) for Opus 4.8: **7× cheaper**.
+- **Haiku 5.5 low is the cost-optimal option, pending a bold-label prompt fix (next work).** It costs 0.42¢ per incident (57× cheaper than Opus 4.8) but passes narrowly: test root cause 27/32, format one row above the bar. Four of its five root-cause misses are a correct answer with the bold `**Root cause:**` label dropped, so the next step is a prompt round targeting the label, re-measured with the same floor.
+
+**The confirmation rule mattered twice.** The pre-registered within-noise rule (C0.4) ran twice: it **confirmed** climb round 1 (40/42 → 82/84 on format, a pass both times) and **changed** one verdict, Haiku 5.5 low, from fail at 2 reps (root cause 30/34, format 39/42) to pass at 4 reps (63/68, 80/84).
+
 
 | cell | model, effort, prompt | root cause train+test | test root cause | format | reg-verbatim | ¢/incident rate card (list) | floor |
 |---|---|---|---|---|---|---|---|

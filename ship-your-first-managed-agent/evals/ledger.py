@@ -58,6 +58,34 @@ def roles() -> dict[tuple[str, str], str]:
     return r
 
 
+def split_rc(flow: Path, v: str, split: str) -> str:
+    rows = [json.loads(l) for l in (flow / v / "results.jsonl").read_text().splitlines() if l.strip()]
+    xs = [r["grade"]["root_cause"] for r in rows if split in r["tags"]]
+    return f"{sum(xs)}/{len(xs)}"
+
+
+def recommendation(base: dict) -> list[str]:
+    """Deployment recommendation (Steffany, 2026-10-14), with its numbers recomputed from the rows."""
+    if not (CLIMB / "v1" / "results.jsonl").exists() or not (LADDER / "v5" / "results.jsonl").exists():
+        return []
+    s, h = cell("v1", CLIMB), cell("v5")
+    x = lambda c: base["rate_card_per_incident"] / c["rate_card_per_incident"]
+    return ["", "## Deployment recommendation", "",
+            "The walk's incumbent is Haiku 5.5 low with the climbed prompt (ladder v5), a narrow pass; the walk ends there "
+            "and Haiku medium was not run (Steffany, 2026-10-14). Separately:", "",
+            f"- **Deploy Sonnet 5.5 low with the climbed prompt (climb v1).** Passes with margin: root cause "
+            f"{pct(s['root_cause_tt'])} on train+test, **{split_rc(CLIMB, 'v1', 'test')} on held-out test**, format {pct(s['format'])}, "
+            f"reg-verbatim {s['reg_verbatim']}; {s['rate_card_per_incident'] * 100:.2f}¢ per incident at the rate card "
+            f"({s['list_per_incident'] * 100:.2f}¢ list), **{x(s):.0f}× cheaper** than Opus 4.8 ({base['rate_card_per_incident'] * 100:.2f}¢).",
+            f"- **Haiku 5.5 low is the cost-optimal option, pending a bold-label prompt fix (next work).** "
+            f"{h['rate_card_per_incident'] * 100:.2f}¢ per incident at the rate card ({x(h):.0f}× cheaper than Opus 4.8; "
+            f"{h['list_per_incident'] * 100:.2f}¢ list), but a narrow pass: root cause {pct(h['root_cause_tt'])} on train+test, "
+            f"{split_rc(LADDER, 'v5', 'test')} on held-out test, format {pct(h['format'])}. Most of its root-cause misses are a correct "
+            "answer with the bold `**Root cause:**` label dropped (ladder/v5/change.md).",
+            "- **The pre-registered confirmation rule (C0.4) ran twice:** it confirmed climb round 1 (pass at 2 and at 4 reps) and "
+            "changed one verdict, Haiku 5.5 low, from fail at 2 reps to pass at 4."]
+
+
 def main() -> None:
     floor = json.loads((LADDER / "_state.json").read_text())["floor"]
     base = cell("baseline")
@@ -78,6 +106,7 @@ def main() -> None:
         lines.append(f"| {flow} | {v} | {model}, {eff} | `{sha}` | {c['rows']} | {pct(c['root_cause_tt'], c['root_cause_tt_hw'])} "
                      f"| {pct(c['format'], c['format_hw'])} | {c['reg_verbatim']} | {c['rate_card_per_incident'] * 100:.2f} "
                      f"| {c['list_per_incident'] * 100:.2f} | {fl} | {role.get((flow, v), '')} |")
+    lines += recommendation(base)
     lst, card = spend_by_file(), spend_by_file(column="rate_card")
     lines += ["", "## Spend by ledger file", "",
               "Failed attempts (`errors.jsonl`) are billed and counted. Copied rows (`meta.copied_from`) and fake rows are not.", "",

@@ -17,6 +17,14 @@ Floor (pre-registered, docs/plan.md C0.3): root cause on train+test within 10 po
 | climb | baseline | Sonnet 5.5, low | `077ff8da` | 42 | 100.0% ± 0.0% | 61.9% ± 14.7% | [1, 1] | 3.75 | 3.74 | FAIL | copy of ladder v1 (not billed again) |
 | climb | v1 | Sonnet 5.5, low | `f5795beb` | 84 | 100.0% ± 0.0% | 97.6% ± 3.3% | [1, 1, 1, 1] | 3.41 | 3.33 | PASS | kept (2026-10-14): passes the floor at 3.33¢ list / 3.41¢ rate card per incident |
 
+## Deployment recommendation
+
+The walk's incumbent is Haiku 5.5 low with the climbed prompt (ladder v5), a narrow pass; the walk ends there and Haiku medium was not run (Steffany, 2026-10-14). Separately:
+
+- **Deploy Sonnet 5.5 low with the climbed prompt (climb v1).** Passes with margin: root cause 100.0% on train+test, **32/32 on held-out test**, format 97.6%, reg-verbatim [1, 1, 1, 1]; 3.41¢ per incident at the rate card (3.33¢ list), **7× cheaper** than Opus 4.8 (24.02¢).
+- **Haiku 5.5 low is the cost-optimal option, pending a bold-label prompt fix (next work).** 0.42¢ per incident at the rate card (57× cheaper than Opus 4.8; 1.79¢ list), but a narrow pass: root cause 92.6% on train+test, 27/32 on held-out test, format 95.2%. Most of its root-cause misses are a correct answer with the bold `**Root cause:**` label dropped (ladder/v5/change.md).
+- **The pre-registered confirmation rule (C0.4) ran twice:** it confirmed climb round 1 (pass at 2 and at 4 reps) and changed one verdict, Haiku 5.5 low, from fail at 2 reps to pass at 4.
+
 ## Spend by ledger file
 
 Failed attempts (`errors.jsonl`) are billed and counted. Copied rows (`meta.copied_from`) and fake rows are not.
