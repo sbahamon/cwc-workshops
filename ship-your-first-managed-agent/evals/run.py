@@ -49,6 +49,7 @@ sys.path.insert(0, str(WORKSHOP))
 import config  # noqa: E402  (the workshop's single source for SYSTEM / TOOLS)
 from cases import Case, load_answer, load_cases  # noqa: E402
 from graders import grade  # noqa: E402
+from pricing import RATE_CARD_DATE, known, session_usd  # noqa: E402
 from spend import CAP_USD, total_spend  # noqa: E402
 from tools import CaseTools  # noqa: E402
 
@@ -160,6 +161,8 @@ class Attempt:
     model: str | None = None
     effort_echoed: str | None = None
     list_cost_usd: float | None = None
+    spans: list = field(default_factory=list)  # per-request model_usage, for the rate card
+    cache_1h_tokens: int = 0
     active_seconds: float | None = None
     latency_s: float | None = None
     sandbox_calls: int = 0
@@ -214,8 +217,10 @@ def drive(events, send, tools: CaseTools, att: Attempt, cancelled: threading.Eve
                    "content": [{"type": "text", "text": result}]}])
         elif t == "span.model_request_end":
             u = ev.model_usage
+            span = {k: int(getattr(u, k, 0) or 0) for k in att.usage}
+            att.spans.append(span)
             for k in att.usage:
-                att.usage[k] += int(getattr(u, k, 0) or 0)
+                att.usage[k] += span[k]
         elif t == "session.usage":
             att.session_usage_events += 1
         elif t == "session.error":
@@ -410,6 +415,8 @@ class LiveBackend:
             if s.usage and s.usage.list_cost is not None:
                 att.list_cost_usd = int(s.usage.list_cost.amount) / 100
             att.active_seconds = getattr(s.usage, "active_seconds", None)
+            cc = getattr(s.usage, "cache_creation", None)
+            att.cache_1h_tokens = int(getattr(cc, "ephemeral_1h_input_tokens", 0) or 0)
             m = s.agent.model
             att.model = getattr(m, "id", m)
             eff = getattr(m, "effort", None)
@@ -492,8 +499,13 @@ def record(w: Writer, case: Case, rep: int, cfg: AgentCfg, att: Attempt, meta: d
                   for e in att.events))
     trace = [{"role": "system", "content": cfg.system}, {"role": "user", "content": case.prompt}, *att.turns]
     w.put(f"traces/{case.id}_rep{rep}.json", json.dumps(trace, indent=2))
+    # Headline cost is list_cost (metered; what budgets and the cap enforce). The rate-card
+    # cost of the same tokens rides beside it: they differ for Haiku 5.5 (SOURCES.md).
+    rate_card = (round(session_usd(att.model, att.spans, att.active_seconds, att.cache_1h_tokens), 6)
+                 if known(att.model) and att.spans else None)
     common = {"prompt_id": case.id, "rep": rep, "model": att.model, "usage": att.usage,
-              "list_cost_usd": att.list_cost_usd}
+              "list_cost_usd": att.list_cost_usd, "rate_card_usd": rate_card}
+    base_meta["rate_card_basis"] = f"pricing.py, published rates fetched {RATE_CARD_DATE}"
     if att.error_class:
         row = {**common, "class": att.error_class, "error": att.error, "retries": att.retries,
                "stop_reason": att.stop_reason, "meta": base_meta}
@@ -506,7 +518,8 @@ def record(w: Writer, case: Case, rep: int, cfg: AgentCfg, att: Attempt, meta: d
            "meta": {**base_meta, "sandbox_calls": att.sandbox_calls, "custom_calls": att.custom_calls,
                     "deploys_before_first_log_access": att.deploys_before_first_log_access,
                     "session_usage_events": att.session_usage_events}}
-    if not (att.usage["output_tokens"] > 0 and row["latency_s"] and att.list_cost_usd is not None):
+    if not (att.usage["output_tokens"] > 0 and row["latency_s"] and att.list_cost_usd is not None
+            and row["rate_card_usd"] is not None):
         raise RuntimeError(f"{case.id} rep{rep}: scorable row is missing usage, latency or cost: {common}")
     w.append("results.jsonl", row)
     return row
@@ -633,7 +646,9 @@ def main(argv=None) -> int:
             run_cost += row.get("list_cost_usd") or 0.0
             g = row.get("grade")
             status = f"root_cause={g['root_cause']} format={g['format']}" if g else f"ERROR {row['class']}: {row['error']}"
-            print(f"[{done}/{len(todo)}] {c.id} rep{r}: {status}  ${row.get('list_cost_usd') or 0:.2f}  "
+            rc = row.get("rate_card_usd")
+            print(f"[{done}/{len(todo)}] {c.id} rep{r}: {status}  ${row.get('list_cost_usd') or 0:.2f} list"
+                  f" / {'$%.4f' % rc if rc is not None else 'n/a'} rate card  "
                   f"{time.monotonic() - t0:.0f}s elapsed", flush=True)
 
     with cf.ThreadPoolExecutor(max_workers=a.concurrency) as ex:

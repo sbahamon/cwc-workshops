@@ -10,10 +10,11 @@
   },
   "approve_each_round": true,
   "floor": {
-    "note": "pre-registered 2026-10-13 (docs/plan.md C0.3), before any ladder result",
+    "note": "pre-registered 2026-10-13 (docs/plan.md C0.3), before any ladder result; reg-verbatim clause clarified 2026-10-14 (root_cause only), before any ladder result",
     "root_cause_train_test_within_points_of_baseline": 10,
-    "reg_verbatim_every_run_passes": true,
-    "format_min": 0.95
+    "format_min": 0.95,
+    "reg_verbatim_root_cause_correct_every_rep": true,
+    "format_rule": "format >= format_min over the cell's rows; reg-verbatim's format is not a separate requirement"
   },
   "train_ids": [
     "shift-early",
@@ -51,6 +52,7 @@
     "scenario.py",
     "diffs.py",
     "spend.py",
+    "pricing.py",
     "../config.py",
     "../incident-triage-runbook/SKILL.md"
   ],
@@ -73,6 +75,11 @@
       "unit": "$"
     },
     {
+      "id": "rate_card_usd",
+      "label": "Rate card",
+      "unit": "$"
+    },
+    {
       "id": "latency_s",
       "label": "Latency",
       "unit": "s"
@@ -86,20 +93,6 @@
       "label": "Out tokens"
     }
   ],
-  "prices": {
-    "claude-opus-4-8": {
-      "in": 5.0,
-      "out": 25.0
-    },
-    "claude-sonnet-5-5": {
-      "in": 2.0,
-      "out": 10.0
-    },
-    "claude-haiku-5-5": {
-      "in": 0.1,
-      "out": 0.5
-    }
-  },
   "walk": [],
   "harness_sha": "9f02ee7a8a03c9852b711622772fcc35624f04bb6c793d6f98b90c33937df97c"
 }

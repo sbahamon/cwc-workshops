@@ -44,6 +44,8 @@ def test_oracle_scores_everything(tmp_path, cases_dir):
     for r in rs:
         assert r["model"] == "claude-opus-4-8" and r["usage"]["output_tokens"] > 0
         assert r["latency_s"] > 0 and r["tool_calls"] == 2 and r["status"] == "ok"
+        assert r["rate_card_usd"] > 0 and r["list_cost_usd"] is not None  # both costs, side by side
+        assert "pricing.py" in r["meta"]["rate_card_basis"]
         assert r["tags"][0] in {"regression", "shifted", "no_culprit", "decoy"}
         assert r["meta"]["deploys_before_first_log_access"] is True and r["meta"]["fake"] is True
     trace = json.loads((tmp_path / f"flow/baseline/traces/{FEW[0]}_rep0.json").read_text())
