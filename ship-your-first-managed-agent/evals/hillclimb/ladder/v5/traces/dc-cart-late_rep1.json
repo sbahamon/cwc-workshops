@@ -1,0 +1,82 @@
+[
+  {
+    "role": "system",
+    "content": "You are the SRE Agent \u2014 an SRE/data-analyst agent embedded in an incident\ndashboard. The application log is mounted at /mnt/session/uploads/app.log (large; use\ngrep/python to analyze it, don't read it whole). You have local tools that\nquery the same data the dashboard shows. Correlate evidence and state findings\nplainly and concisely.\n\nFinish with the runbook's root-cause line, written once, as the last line of\nthe answer:\n**Root cause:** `<sha or component>` \u2014 <mechanism>.\nThe text after the label is exactly one sentence: what changed and how that\nproduces the symptom. Anything that would be a second sentence (downstream\nimpact, the fix or rollback, confidence, open questions) goes on its own line\nabove the root-cause line, never after the label.\n"
+  },
+  {
+    "role": "user",
+    "content": "cart p99 spiked ~14:44 UTC. Find the root cause."
+  },
+  {
+    "role": "tool_call",
+    "name": "read",
+    "content": "{\n  \"file_path\": \"/workspace/skills/incident-triage-runbook/SKILL.md\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "1\t---\n2\tname: incident-triage-runbook\n3\tdescription: The SRE team's runbook for triaging production latency and error-rate incidents. Use this whenever investigating an incident, a latency spike, elevated error rates, or when asked \"what caused X\" about a production service.\n4\t---\n5\t\n6\t# Incident triage\n7\t\n8\tIf you change the order below, say why in #sre.\n9\t\n10\t## Order of operations\n11\t\n12\t1. Pull deploys for the last 6h. Don't open the log first.\n13\t2. Line the deploy timestamps up against `p99_latency_ms` / `error_rate` for the paged service. State the gap (\"deploy 14:31, p99 moves 14:33\").\n14\t3. If a deploy lines up: pull the diff, read it. Check for the stuff in the next section.\n15\t4. Then grep the log to confirm. Don't grep to fish.\n16\t5. No deploy lines up \u2192 check `db_pool_utilization` across checkout/cart/auth/inventory, then upstream deps.\n17\t\n18\t## Things that have burned us\n19\t\n20\tIn rough order of how often:\n21\t\n22\t- per-row query where there used to be a batch\n23\t- cache decorator removed \"temporarily\"\n24\t- new query, no index\n25\t- blocking call in an async handler\n26\t- retry loop with no backoff\n27\t\n28\t## Write-up\n29\t\n30\tOne line at the bottom:\n31\t\n32\t> **Root cause:** `<sha>` \u2014 one sentence on the mechanism.\n33\t\n34\tIf it wasn't a deploy, put the component or upstream dep where the sha goes (`db-primary`, `stripe-api`, whatever). Still one sentence.\n35\t\n36\tEverything above that line is evidence. Keep it short; the long version goes in the postmortem doc.\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_recent_deploys",
+    "content": "{}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_recent_deploys",
+    "content": "[\n  {\n    \"ts\": \"2026-04-22T14:41:00Z\",\n    \"service\": \"checkout\",\n    \"commit\": \"346f34d\",\n    \"author\": \"erin@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"structured request logging\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:43:20Z\",\n    \"service\": \"cart\",\n    \"commit\": \"df06e76\",\n    \"author\": \"alice@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"price cart lines individually\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:44:50Z\",\n    \"service\": \"auth\",\n    \"commit\": \"e8f9711\",\n    \"author\": \"bob@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"add rate limiting to /refresh\"\n  }\n]\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_metrics",
+    "content": "{\n  \"metric\": \"p99_latency_ms\",\n  \"service\": \"cart\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_metrics",
+    "content": "[{\"ts\": \"2026-04-22T14:00:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:01:00Z\", \"value\": 73.0}, {\"ts\": \"2026-04-22T14:02:00Z\", \"value\": 66.0}, {\"ts\": \"2026-04-22T14:03:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:04:00Z\", \"value\": 71.0}, {\"ts\": \"2026-04-22T14:05:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:06:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:07:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:08:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:09:00Z\", \"value\": 72.0}, {\"ts\": \"2026-04-22T14:10:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:11:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:12:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:13:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:14:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:15:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:16:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:17:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:18:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:19:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:20:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:21:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:22:00Z\", \"value\": 61.0}, {\"ts\": \"2026-04-22T14:23:00Z\", \"value\": 68.0}, {\"ts\": \"2026-04-22T14:24:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:25:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:26:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:27:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:28:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:29:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:30:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:31:00Z\", \"value\": 66.0}, {\"ts\": \"2026-04-22T14:32:00Z\", \"value\": 71.0}, {\"ts\": \"2026-04-22T14:33:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:34:00Z\", \"value\": 64.0}, {\"ts\": \"2026-04-22T14:35:00Z\", \"value\": 74.0}, {\"ts\": \"2026-04-22T14:36:00Z\", \"value\": 64.0}, {\"ts\": \"2026-04-22T14:37:00Z\", \"value\": 70.0}, {\"ts\": \"2026-04-22T14:38:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:39:00Z\", \"value\": 74.0}, {\"ts\": \"2026-04-22T14:40:00Z\", \"value\": 72.0}, {\"ts\": \"2026-04-22T14:41:00Z\", \"value\": 74.0}, {\"ts\": \"2026-04-22T14:42:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:43:00Z\", \"value\": 3730.0}, {\"ts\": \"2026-04-22T14:44:00Z\", \"value\": 3881.0}, {\"ts\": \"2026-04-22T14:45:00Z\", \"value\": 3480.0}, {\"ts\": \"2026-04-22T14:46:00Z\", \"value\": 4159.0}, {\"ts\": \"2026-04-22T14:47:00Z\", \"value\": 3719.0}, {\"ts\": \"2026-04-22T14:48:00Z\", \"value\": 3534.0}, {\"ts\": \"2026-04-22T14:49:00Z\", \"value\": 4263.0}, {\"ts\": \"2026-04-22T14:50:00Z\", \"value\": 4093.0}, {\"ts\": \"2026-04-22T14:51:00Z\", \"value\": 4192.0}, {\"ts\": \"2026-04-22T14:52:00Z\", \"value\": 3840.0}, {\"ts\": \"2026-04-22T14:53:00Z\", \"value\": 4394.0}, {\"ts\": \"2026-04-22T14:54:00Z\", \"value\": 4378.0}, {\"ts\": \"2026-04-22T14:55:00Z\", \"value\": 4393.0}, {\"ts\": \"2026-04-22T14:56:00Z\", \"value\": 4600.0}, {\"ts\": \"2026-04-22T14:57:00Z\", \"value\": 4582.0}, {\"ts\": \"2026-04-22T14:58:00Z\", \"value\": 4010.0}, {\"ts\": \"2026-04-22T14:59:00Z\", \"value\": 4322.0}]"
+  },
+  {
+    "role": "assistant",
+    "content": "Cart p99 jumps from about 79 ms to 3730 ms at 14:43, and cart deploy df06e76 landed at 14:43:20. Pulling that diff now."
+  },
+  {
+    "role": "tool_call",
+    "name": "get_diff",
+    "content": "{\n  \"commit\": \"df06e76\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_diff",
+    "content": "commit df06e76bfd4ecee19d3ff4a75abd81b13a34aa5c\nAuthor: Alice <alice@shop.io>\nDate:   Wed Apr 22 14:40:53 2026 +0000\n\n    price cart lines individually\n\n    The old list comprehension was getting hard to follow. Split it into\n    an explicit loop so the per-row enrichment logic is clearer.\n\ndiff --git a/cart/pricing.py b/cart/pricing.py\nindex 8f3a2b1..c4d9e7f 100644\n--- a/cart/pricing.py\n+++ b/cart/pricing.py\n@@ -41,22 +41,24 @@ class CartPricingHandler(BaseHandler):\n     def price_cart(self, cart_id: str) -> dict:\n         rows = CartLine.objects.filter(cart_id=cart_id)\n-        ids = [r.sku_id for r in rows]\n-\n-        # Single query, then group in memory\n-        all_items = SkuPrice.objects.filter(sku_id__in=ids)\n-        by_id = defaultdict(list)\n-        for item in all_items:\n-            by_id[item.sku_id].append(item)\n-\n-        summaries = [\n-            self._summarize(r, by_id[r.sku_id])\n-            for r in rows\n-        ]\n+\n+        summaries = []\n+        for line in rows:\n+            # fetch the items for this row\n+            items = SkuPrice.objects.filter(sku_id=line.sku_id)\n+            log.debug(\n+                'db_query sql=\"SELECT * FROM sku_prices WHERE sku_id = ?\" params=[%s]',\n+                line.sku_id,\n+            )\n+            summaries.append(self._summarize(line, list(items)))\n+\n         return {\n             \"cart_id\": cart_id,\n             \"rows\": summaries,\n             \"total_cents\": sum(s[\"subtotal_cents\"] for s in summaries),\n         }\n"
+  },
+  {
+    "role": "assistant",
+    "content": "The diff replaces one batched `sku_id__in` query with a query per cart line, which is the first pattern in the runbook. Checking the log to confirm."
+  },
+  {
+    "role": "tool_call",
+    "name": "bash",
+    "content": "{\n  \"command\": \"cd /mnt/session/uploads; ls -la; grep -c \\\"sku_prices\\\" app.log; grep \\\"sku_prices\\\" app.log | head -3; grep \\\"sku_prices\\\" app.log | awk '{print $1,$2}' | cut -c1-16 | sort | uniq -c | head -30\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "total 1344\ndrwxr-xr-x 1 claude ubuntu       0 Oct 14 11:47 .\ndrwxr-xr-x 4 root   root      4096 Oct 14 11:47 ..\n-rw-r--r-- 1 claude ubuntu 1369315 Oct 14 11:47 app.log\n2105\n{\"ts\":\"2026-04-22T14:00:03.542Z\",\"level\":\"DEBUG\",\"service\":\"cart\",\"host\":\"cart-2\",\"msg\":\"db_query sql=\\\"SELECT * FROM sku_prices WHERE sku_id IN (?)\\\" rows=3\",\"request_id\":\"req_e54f455b407a\",\"duration_ms\":11}\n{\"ts\":\"2026-04-22T14:00:07.725Z\",\"level\":\"DEBUG\",\"service\":\"cart\",\"host\":\"cart-1\",\"msg\":\"db_query sql=\\\"SELECT * FROM sku_prices WHERE sku_id IN (?)\\\" rows=13\",\"request_id\":\"req_abe92baaeabe\",\"duration_ms\":5}\n{\"ts\":\"2026-04-22T14:00:08.380Z\",\"level\":\"DEBUG\",\"service\":\"cart\",\"host\":\"cart-1\",\"msg\":\"db_query sql=\\\"SELECT * FROM sku_prices WHERE sku_id IN (?)\\\" rows=2\",\"request_id\":\"req_1ceb0c0a4ecd\",\"duration_ms\":10}\n   2105 {\"ts\":\"2026-04-2\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "bash",
+    "content": "{\n  \"command\": \"cd /mnt/session/uploads; python3 - <<'EOF'\\nimport json,collections\\nc=collections.Counter(); per=collections.Counter(); dur=collections.defaultdict(list)\\nfor l in open('app.log'):\\n    try: e=json.loads(l)\\n    except: continue\\n    m=e.get('msg','')\\n    if 'sku_prices' in m:\\n        kind='IN(batch)' if ' IN ' in m else 'per-row(=)'\\n        t=e['ts'][:16]\\n        c[(t,kind)]+=1\\n        if e.get('duration_ms') is not None: dur[(t,kind)].append(e['duration_ms'])\\nfor k in sorted(c):\\n    if k[0]>='2026-04-22T14:36': print(k,c[k], sorted(dur[k])[len(dur[k])//2] if dur[k] else '-')\\nprint('before 14:40 kinds:',collections.Counter(k[1] for k in c if k[0]<'2026-04-22T14:43'))\\nEOF\\ngrep -i \\\"cart\\\" app.log | grep -iE \\\"error|timeout|slow|pool\\\" | head -5\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "('2026-04-22T14:36', 'IN(batch)') 4 14\n('2026-04-22T14:37', 'IN(batch)') 5 14\n('2026-04-22T14:38', 'IN(batch)') 4 9\n('2026-04-22T14:39', 'IN(batch)') 6 10\n('2026-04-22T14:40', 'IN(batch)') 2 12\n('2026-04-22T14:41', 'IN(batch)') 3 11\n('2026-04-22T14:42', 'IN(batch)') 5 9\n('2026-04-22T14:43', 'per-row(=)') 76 12\n('2026-04-22T14:44', 'per-row(=)') 73 15\n('2026-04-22T14:45', 'per-row(=)') 129 12\n('2026-04-22T14:46', 'per-row(=)') 177 15\n('2026-04-22T14:47', 'per-row(=)') 137 13\n('2026-04-22T14:48', 'per-row(=)') 58 14\n('2026-04-22T14:49', 'per-row(=)') 171 13\n('2026-04-22T14:50', 'per-row(=)') 126 13\n('2026-04-22T14:51', 'per-row(=)') 92 14\n('2026-04-22T14:52', 'per-row(=)') 134 14\n('2026-04-22T14:53', 'per-row(=)') 85 13\n('2026-04-22T14:54', 'per-row(=)') 96 14\n('2026-04-22T14:55', 'per-row(=)') 86 14\n('2026-04-22T14:56', 'per-row(=)') 159 13\n('2026-04-22T14:57', 'per-row(=)') 84 13\n('2026-04-22T14:58', 'per-row(=)') 121 13\n('2026-04-22T14:59', 'per-row(=)') 84 15\nbefore 14:40 kinds: Counter({'IN(batch)': 43})\n{\"ts\":\"2026-04-22T14:52:11.009Z\",\"level\":\"ERROR\",\"service\":\"cart\",\"host\":\"cart-2\",\"msg\":\"DB connection pool exhausted (active=50/50, waiters=12)\",\"request_id\":\"req_7f82d9c1dc83\"}\n{\"ts\":\"2026-04-22T14:52:11.012Z\",\"level\":\"ERROR\",\"service\":\"cart\",\"host\":\"cart-2\",\"msg\":\"request_end status=500 path=/api/cart error=PoolTimeout\",\"request_id\":\"req_7f82d9c1dc83\",\"user_id\":\"u_80187\",\"latency_ms\":3565,\"status\":500}\n{\"ts\":\"2026-04-22T14:52:26.104Z\",\"level\":\"ERROR\",\"service\":\"cart\",\"host\":\"cart-3\",\"msg\":\"DB connection pool exhausted (active=50/50, waiters=12)\",\"request_id\":\"req_ad2cdab11315\"}\n{\"ts\":\"2026-04-22T14:52:26.107Z\",\"level\":\"ERROR\",\"service\":\"cart\",\"host\":\"cart-3\",\"msg\":\"request_end status=500 path=/api/cart error=PoolTimeout\",\"request_id\":\"req_ad2cdab11315\",\"user_id\":\"u_30343\",\"latency_ms\":3531,\"status\":500}\n{\"ts\":\"2026-04-22T14:52:41.493Z\",\"level\":\"ERROR\",\"service\":\"cart\",\"host\":\"cart-1\",\"msg\":\"DB connection pool exhausted (active=50/50, waiters=12)\",\"request_id\":\"req_35b39d7c367a\"}\n"
+  },
+  {
+    "role": "assistant",
+    "content": "The cart p99 regression comes from df06e76, which replaced one batched `sku_prices` query per request with one query per cart line.\n\n**Timeline**\n- Deploys in the last 6h: checkout 346f34d at 14:41:00, cart df06e76 at 14:43:20, auth e8f9711 at 14:44:50.\n- Cart p99 was 64\u201380 ms all through 14:00\u201314:42. It reads 3730 ms at 14:43 and stays between 3480 and 4600 ms through 14:59. The gap from deploy to p99 move is under a minute.\n- Checkout and auth deployed before or around the spike, but cart's p99 moved at 14:43, with cart's own deploy. Auth's deploy at 14:44:50 came after the spike had already started, so it doesn't explain the onset.\n\n**Diff (df06e76, \"price cart lines individually\")**\n- Before: one `SkuPrice.objects.filter(sku_id__in=ids)` query, grouped in memory.\n- After: a loop that runs `SkuPrice.objects.filter(sku_id=line.sku_id)` once per cart line. The commit message describes it as a readability refactor, but it changes the query count per request from 1 to N.\n\n**Log confirmation**\n- 14:00\u201314:42: 43 `sku_prices` queries, all batched `IN (...)`, median about 10\u201314 ms.\n- 14:43\u201314:59: 1,500+ per-row `sku_prices` queries (roughly 58\u2013177 per minute), median about 12\u201315 ms each. A cart request with N lines now issues N round trips. Under load that multiplies latency and holds connections.\n- Downstream symptom: from 14:52 the logs show `DB connection pool exhausted (active=50/50, waiters=12)` and `request_end status=500 path=/api/cart error=PoolTimeout` with latencies around 3.5 s.\n\nI did not check the cart error_rate metric or `db_pool_utilization` directly. The pool exhaustion comes from the log, not from a metric query.\n\n**Recommended action:** Roll back cart to the pre-df06e76 build, or restore the batched `sku_id__in` query, and confirm p99 returns to under 100 ms. Keep the refactor's readability goal, but restore the single batched query in the fix.\n\n**Root cause:** `df06e76` \u2014 replacing the batched `sku_prices` lookup with a per-cart-line query multiplies DB round trips per `/api/cart` request, which exhausts the 50-connection pool and drives p99 from about 80 ms to about 4 s."
+  }
+]

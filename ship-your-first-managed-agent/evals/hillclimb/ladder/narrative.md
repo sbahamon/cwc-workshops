@@ -1,4 +1,24 @@
-# Ladder: morning summary (overnight 2026-10-14)
+# Ladder: summary (updated evening 2026-10-14)
+
+**Current result.** The cheapest cell that clears the pre-registered floor is **Sonnet 5.5 at low effort with the climbed system prompt** (`hillclimb/climb/v1`): root cause 100% on train+test (68/68), format 97.6% (82/84), `reg-verbatim` right on all 4 reps, at **3.41¢ per incident at the rate card (3.33¢ list) versus 24.02¢ (24.07¢) for Opus 4.8 at default effort: 7.0× cheaper**. One prompt change did it: the root-cause line is one sentence, written once, last. The walk then stepped down to **Haiku 5.5 low with the climbed prompt (v5): it fails the floor** (root cause 88.2%, format 92.9%; both within noise). Three of Haiku's four root-cause misses name the right answer but drop the bold `**Root cause:**` label, so the grader can't find the line; it would still fail on format with a lenient label rule. C0.4 would give a within-noise fail one more run (about 75¢ list); not run, per Steffany's instruction to stop after the Haiku result.
+
+| cell | model, effort, prompt | root cause train+test | format | reg-verbatim | ¢/incident rate card (list) | floor |
+|---|---|---|---|---|---|---|
+| baseline | Opus 4.8, default (xhigh), shipped | 100% (34/34) | 92.9% | [1, 1] | 24.02 (24.07) | reference |
+| v1 | Sonnet 5.5, low, shipped | 100% | 61.9% | [1, 1] | 3.75 (3.74) | fail |
+| v2 | Opus 4.8, low, shipped (diagnostic) | 100% | 100% | [1] | 13.65 (13.71) | off path |
+| v3 | Sonnet 5.5, medium, shipped | 100% | 69.0% | [1, 1] | 3.89 (3.81) | fail |
+| v4 | Sonnet 5.5, high, shipped | 100% | 52.4% | [1, 1] | 6.52 (6.55) | fail |
+| climb/v1 | Sonnet 5.5, low, **climbed** (4 reps) | 100% (68/68) | **97.6%** | [1, 1, 1, 1] | **3.41 (3.33)** | **pass: incumbent** |
+| v5 | Haiku 5.5, low, climbed | 88.2% (30/34) | 92.9% | [1, 1] | 0.42 (1.79) | fail (within noise) |
+
+Spend: **$23.53 list / $22.95 rate card** of the $50 cap. Chart: `results/path.svg`; ledger: `COST_LEDGER.md`; climb: `hillclimb/climb/narrative.md`.
+
+---
+
+The overnight summary below is kept as written that morning (with the grader-fix notes added).
+
+## Overnight summary (2026-10-14 morning)
 
 **Headline.** Every cheaper cell found the root cause as reliably as Opus 4.8. All three Sonnet 5.5 cells scored 100% root cause on train+test (after the grader fix below). Sonnet 5.5 low did it at **3.7¢ per incident against 24.1¢, 6.4× cheaper**. But **no cell cleared the pre-registered floor**: every Sonnet cell failed the **format** rule (the root-cause line must be one sentence, ≥ 95% of rows). Sonnet keeps adding a second sentence such as "Reverting it should restore the batched query". More effort made that worse, not better. The walk stopped where its rules say it stops; the incumbent is still the baseline. Phase 8 was not started.
 

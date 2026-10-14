@@ -138,12 +138,22 @@
       "verdict": "fail (format 52.4% < 95%; root_cause 100%)",
       "adopted": false,
       "why": "v3 failed -> second and last notch right"
+    },
+    {
+      "variant": "v5",
+      "model": "claude-haiku-5-5",
+      "effort": "low",
+      "role": "walk",
+      "prompt": "climbed prompt r1",
+      "verdict": "fail (root_cause 88.2% < 90.0%; format 92.9% < 95%; both within noise)",
+      "adopted": false,
+      "why": "climbed Sonnet 5.5 low passed the floor at 3.33\u00a2 -> step down to Haiku 5.5 low (projected under the incumbent)"
     }
   ],
   "harness_sha": "c808e86bdb6d04f19d7590b2862192c74c4fae6ff66e530940f33ab33e9f15f3",
   "walk_status": {
     "stopped": "2026-10-14",
-    "reason": "no cell cleared the floor; Sonnet row exhausted after two notches right; tier monotonicity presumes Haiku fails at the same effort; the only extension tier (Opus 5.5) is excluded; the $20 overnight stop was also reached ($19.96)",
-    "incumbent": "baseline"
+    "incumbent": "climb/v1 (Sonnet 5.5 low + climbed prompt r1)",
+    "reason": "Haiku 5.5 low with the climbed prompt fails the floor (root_cause 30/34, format 39/42); C0.4's within-noise rule would give it one more run, which Steffany did not authorize in this session (her call); Steffany's instruction was to stop after the Haiku result"
   }
 }

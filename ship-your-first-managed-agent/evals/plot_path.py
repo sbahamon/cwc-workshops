@@ -55,7 +55,9 @@ def label(entry: dict, c: dict) -> str:
     role = entry.get("role")
     if entry.get("prompt"):
         eff = f"{eff} effort, {entry['prompt']}"
-        return f"{model}, {eff} — {'kept' if entry.get('adopted') else 'not kept'}\n{line2}"
+        why = entry.get("verdict", "").split("(")[-1].split(";")[0].rstrip(")")
+        tag = "kept" if entry.get("adopted") else ("fails floor: " + why if why else "not kept")
+        return f"{model}, {eff} — {tag}\n{line2}"
     tag = {"baseline": "baseline", "diagnostic": "round-0 diagnostic (off path)"}.get(role)
     if tag is None:
         tag = "kept" if entry.get("adopted") else "fails floor: " + entry.get("verdict", "").split("(")[-1].split(";")[0].rstrip(")")
@@ -138,7 +140,8 @@ def plot(flow: Path = LADDER, out_dir: Path = OUT) -> list[Path]:
     ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: cents(v)))
     ax.set_xlabel("mean cost per incident at the rate card (log scale; labels also give list_cost, which the spend cap uses)", color=INK)
     ax.set_ylabel("root-cause accuracy, train + test (95% CI)", color=INK)
-    n = base["n_tt"]
+    ns = sorted({c["n_tt"] for _, c in pts})
+    n = f"{ns[0]}" if len(ns) == 1 else f"{ns[0]}–{ns[-1]}"
     ax.set_title(f"SRE agent: root-cause accuracy vs cost per incident ({n} train+test runs per cell; "
                  f"floor: within 10 pts of baseline, format ≥ 95%)", color=INK, fontsize=10.5, loc="left")
     fig.tight_layout()

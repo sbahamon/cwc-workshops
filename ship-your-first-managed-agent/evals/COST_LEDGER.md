@@ -13,8 +13,9 @@ Floor (pre-registered, docs/plan.md C0.3): root cause on train+test within 10 po
 | ladder | v2 | Opus 4.8, low | `077ff8da` | 21 | 100.0% ± 0.0% | 100.0% ± 0.0% | [1] | 13.65 | 13.71 | PASS | would pass (root_cause 100%, format 100%) but off-path by design |
 | ladder | v3 | Sonnet 5.5, medium | `077ff8da` | 42 | 100.0% ± 0.0% | 69.0% ± 14.0% | [1, 1] | 3.89 | 3.81 | FAIL | fail (format 69.0% < 95%; root_cause 100%) |
 | ladder | v4 | Sonnet 5.5, high | `077ff8da` | 42 | 100.0% ± 0.0% | 52.4% ± 15.1% | [1, 1] | 6.52 | 6.55 | FAIL | fail (format 52.4% < 95%; root_cause 100%) |
+| ladder | v5 | Haiku 5.5, low | `f5795beb` | 42 | 88.2% ± 10.8% | 92.9% ± 7.8% | [1, 1] | 0.42 | 1.79 | FAIL | fail (root_cause 88.2% < 90.0%; format 92.9% < 95%; both within noise) |
 | climb | baseline | Sonnet 5.5, low | `077ff8da` | 42 | 100.0% ± 0.0% | 61.9% ± 14.7% | [1, 1] | 3.75 | 3.74 | FAIL | copy of ladder v1 (not billed again) |
-| climb | v1 | Sonnet 5.5, low | `f5795beb` | 46 | 100.0% ± 0.0% | 95.7% ± 5.9% | [1, 1] | 3.44 | 3.35 | PASS | pending the confirmation run |
+| climb | v1 | Sonnet 5.5, low | `f5795beb` | 84 | 100.0% ± 0.0% | 97.6% ± 3.3% | [1, 1, 1, 1] | 3.41 | 3.33 | PASS | kept (2026-10-14): passes the floor at 3.33¢ list / 3.41¢ rate card per incident |
 
 ## Spend by ledger file
 
@@ -22,12 +23,14 @@ Failed attempts (`errors.jsonl`) are billed and counted. Copied rows (`meta.copi
 
 | ledger file | list_cost | rate card |
 |---|---|---|
-| `hillclimb/climb/v1/results.jsonl` | $1.54 | $1.5835 |
+| `hillclimb/climb/v1/results.jsonl` | $2.80 | $2.8651 |
 | `hillclimb/ladder/baseline/results.jsonl` | $10.11 | $10.0863 |
 | `hillclimb/ladder/v1/results.jsonl` | $1.57 | $1.5762 |
 | `hillclimb/ladder/v2/results.jsonl` | $2.88 | $2.8674 |
 | `hillclimb/ladder/v3/results.jsonl` | $1.60 | $1.6353 |
 | `hillclimb/ladder/v4/results.jsonl` | $2.75 | $2.7390 |
+| `hillclimb/ladder/v5/results.jsonl` | $0.75 | $0.1763 |
+| `pilot/haiku-5-5-low-climbed/baseline/results.jsonl` | $0.02 | $0.0040 |
 | `pilot/haiku-5-5-low/baseline/results.jsonl` | $0.02 | $0.0047 |
 | `pilot/manual.jsonl` | $0.22 | $0.2028 |
 | `pilot/opus-4-8-default/baseline/results.jsonl` | $0.48 | $0.4777 |
@@ -37,8 +40,8 @@ Failed attempts (`errors.jsonl`) are billed and counted. Copied rows (`meta.copi
 | `pilot/sonnet-5-5-high/baseline/results.jsonl` | $0.06 | $0.0638 |
 | `pilot/sonnet-5-5-low/baseline/results.jsonl` | $0.06 | $0.0579 |
 | `pilot/sonnet-5-5-medium/baseline/results.jsonl` | $0.04 | $0.0389 |
-| **total** | **$21.50** | **$21.49** |
+| **total** | **$23.53** | **$22.95** |
 
-Cap: $50.00 on list_cost; 43% used, $28.50 left. The total matches `spend.py` and the raw sum of `list_cost_usd` over every counted row.
+Cap: $50.00 on list_cost; 47% used, $26.47 left. The total matches `spend.py` and the raw sum of `list_cost_usd` over every counted row.
 
 Haiku 5.5 note: its session `list_cost` reads about 5× what the Console billed (SOURCES.md), so Haiku's list column overstates what was actually billed; the cap counts it at list_cost anyway.
