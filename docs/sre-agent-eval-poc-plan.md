@@ -198,7 +198,7 @@ Model ladder pricing (per million input/output tokens, from the `claude-api` ski
 
 ### Change 2 — A parameterized incident generator (the case set)
 
-**What:** Refactor `generate_log.py` so a scenario spec drives the log, the metrics, the deploys, and the diffs together, keeping the metrics consistent with the log timeline instead of hand-written. Each scenario is written to its own folder with:
+**What:** A new generator, `evals/generate.py`, where a scenario spec drives the log, the metrics, the deploys, and the diffs together (`data/generate_log.py` is left untouched, because the original dashboard imports it), keeping the metrics consistent with the log timeline instead of hand-written. Each scenario is written to its own folder with:
 
 - a smaller log (target 5–10k lines instead of 70k)
 - `metrics.json`
@@ -206,7 +206,7 @@ Model ladder pricing (per million input/output tokens, from the `claude-api` ski
 - `diffs/<sha>.txt`
 - an answer key stored *outside* anything that gets uploaded or returned by a tool
 
-**Cases (about 8–12 total):**
+**Cases (21 total, 3–4 per family):**
 
 | Family | Cases | What it tests |
 |---|---|---|
@@ -290,7 +290,7 @@ The original stays out of the test set for three reasons:
 
 - **Keep the answer key structurally out of reach.** It never goes into the upload, a tool result, or the system prompt.
 - **Watch for scenario-specific patches.** A prompt patch that names commit hashes, "checkout," or specific times is overfitting and gets reverted.
-- **Noise.** With about 10 cases, one case flipping moves the score by roughly 10 points. Expect the skill's noise check to ask for more repetitions; budget for 2–3.
+- **Noise.** With about 21 cases at 2 reps, the 95% interval on the full set is about ±15 points (`docs/plan.md` §B item 9). Expect the skill's noise check to ask for more repetitions; budget for 2–3.
 - **Cost control.**
   - Run a one-case pilot first to measure real cost per session.
   - Set a budget on every session.
