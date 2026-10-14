@@ -15,7 +15,7 @@ Skill docs refer to the `claude-api` skill bundled with Claude Code 2.1.299 (`sh
 | Agent model/effort | `model: "<id>"` or `{"id", "effort": low\|medium\|high\|xhigh\|max}` | core §Effort on the agent model; probe_results.md | verified (live probe) |
 | Override effort | applied (skill + probe); "public docs say not applied" | core §Override; `scripts/probe_results.md` | public-docs line **unverified this session** |
 | Agent versioning | update → new integer version; pin `{type:"agent", id, version}` | core §Versioning | verified (skill) |
-| Environment | `environments.create(name, config={"type":"cloud","networking":{"type":"limited"}})`; limited without `allowed_hosts` blocks web tools | core; SKILL.md pitfalls (limited networking) | to confirm in Phase 4 |
+| Environment | `environments.create(name, config={"type":"cloud","networking":{"type":"limited"}})`; `allowed_hosts` omitted = no egress, which also blocks web_search/web_fetch | SDK `types/beta/beta_limited_network_params.py` (`allowed_hosts`, `allow_package_managers`, `allow_mcp_servers`, all default off); SKILL.md pitfalls | shape verified (SDK); egress block **to confirm in pilot** |
 | Session create | `agent, environment_id, resources=[{type:"file", file_id, mount_path:"app.log"}], budget, metadata, title` | SDK `sessions.create`; `agent_complete.py` | verified |
 | Session budget | `{"type":"limit","max_list_cost":{"amount":"<int cents>","currency":"USD"}}`; pauses with `stop_reason: budget_reached` | core §Session budgets; live 400 on `"0.25"` (Oct 13) | verified |
 | list_cost basis | list token prices + web search $10/1k + runtime $0.08/hr; rounded to the cent | core §Session budgets | verified (skill) |
@@ -36,3 +36,6 @@ Skill docs refer to the `claude-api` skill bundled with Claude Code 2.1.299 (`sh
 | Opus 4.8 at `low` (round-0 diagnostic) | `{"id":"claude-opus-4-8","effort":"low"}` | SKILL.md effort table (Opus 4.8: low–max) | **to confirm in pilot** (agent create) |
 | Grid exclusion | Opus 5.5 excluded from the walk (cost; Opus 4.8 → Sonnet → Haiku story) | Steffany, Oct 13 amendment | decision |
 | Path chart style | Fig. 8, cost-reduction path | claude.dev blog, *Automating eval design and hillclimbing with Claude* (#hillclimbing-for-cost-reduction) | not fetched this session; layout per the amendment spec |
+| Skill version pin | `skills.create(...)` returns `latest_version_id` (str); the agent's skill reference takes `version: Optional[str]`; run.py pins `version=latest_version_id` | SDK `types/beta/beta_skill.py:27`, `beta_managed_agents_custom_skill_params.py:17` | **to confirm in pilot** (agent create) |
+| Idle stop reasons | `session.status_idle.stop_reason.type` ∈ `end_turn`, `requires_action`, `budget_reached`, `retries_exhausted` | SDK `types/beta/sessions/beta_managed_agents_session_{end_turn,requires_action,budget_reached,retries_exhausted}.py` | verified (SDK) |
+| Agent version | `agents.create()` returns `version: int`; sessions pin `{type:"agent", id, version}` | SDK `types/beta/beta_managed_agents_agent.py:63` | verified (SDK) |
