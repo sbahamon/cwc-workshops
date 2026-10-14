@@ -1,0 +1,68 @@
+[
+  {
+    "role": "system",
+    "content": "You are the SRE Agent \u2014 an SRE/data-analyst agent embedded in an incident\ndashboard. The application log is mounted at /mnt/session/uploads/app.log (large; use\ngrep/python to analyze it, don't read it whole). You have local tools that\nquery the same data the dashboard shows. Correlate evidence and state findings\nplainly and concisely.\n\nFinish with the runbook's root-cause line, written once, as the last line of\nthe answer:\n**Root cause:** `<sha or component>` \u2014 <mechanism>.\nThe text after the label is exactly one sentence: what changed and how that\nproduces the symptom. Anything that would be a second sentence (downstream\nimpact, the fix or rollback, confidence, open questions) goes on its own line\nabove the root-cause line, never after the label.\n"
+  },
+  {
+    "role": "user",
+    "content": "checkout p99 spiked ~14:32 UTC. Find the root cause."
+  },
+  {
+    "role": "tool_call",
+    "name": "read",
+    "content": "{\n  \"file_path\": \"/workspace/skills/incident-triage-runbook/SKILL.md\"\n}"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_recent_deploys",
+    "content": "{}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_recent_deploys",
+    "content": "[\n  {\n    \"ts\": \"2026-04-22T09:14:05Z\",\n    \"service\": \"cart\",\n    \"commit\": \"e21b6c9\",\n    \"author\": \"dave@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"bump lodash to 4.17.22\"\n  },\n  {\n    \"ts\": \"2026-04-22T11:02:33Z\",\n    \"service\": \"auth\",\n    \"commit\": \"9f1e2d4\",\n    \"author\": \"bob@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"add rate limiting to /refresh\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:31:18Z\",\n    \"service\": \"checkout\",\n    \"commit\": \"a3f9c21\",\n    \"author\": \"alice@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"refactor order summary builder for readability\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:55:40Z\",\n    \"service\": \"inventory\",\n    \"commit\": \"7b3e8f0\",\n    \"author\": \"carol@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"add SKU validation on reserve endpoint\"\n  }\n]\n"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "1\t---\n2\tname: incident-triage-runbook\n3\tdescription: The SRE team's runbook for triaging production latency and error-rate incidents. Use this whenever investigating an incident, a latency spike, elevated error rates, or when asked \"what caused X\" about a production service.\n4\t---\n5\t\n6\t# Incident triage\n7\t\n8\tIf you change the order below, say why in #sre.\n9\t\n10\t## Order of operations\n11\t\n12\t1. Pull deploys for the last 6h. Don't open the log first.\n13\t2. Line the deploy timestamps up against `p99_latency_ms` / `error_rate` for the paged service. State the gap (\"deploy 14:31, p99 moves 14:33\").\n14\t3. If a deploy lines up: pull the diff, read it. Check for the stuff in the next section.\n15\t4. Then grep the log to confirm. Don't grep to fish.\n16\t5. No deploy lines up \u2192 check `db_pool_utilization` across checkout/cart/auth/inventory, then upstream deps.\n17\t\n18\t## Things that have burned us\n19\t\n20\tIn rough order of how often:\n21\t\n22\t- per-row query where there used to be a batch\n23\t- cache decorator removed \"temporarily\"\n24\t- new query, no index\n25\t- blocking call in an async handler\n26\t- retry loop with no backoff\n27\t\n28\t## Write-up\n29\t\n30\tOne line at the bottom:\n31\t\n32\t> **Root cause:** `<sha>` \u2014 one sentence on the mechanism.\n33\t\n34\tIf it wasn't a deploy, put the component or upstream dep where the sha goes (`db-primary`, `stripe-api`, whatever). Still one sentence.\n35\t\n36\tEverything above that line is evidence. Keep it short; the long version goes in the postmortem doc.\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_metrics",
+    "content": "{\n  \"metric\": \"p99_latency_ms\",\n  \"service\": \"checkout\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_metrics",
+    "content": "[{\"ts\": \"2026-04-22T14:00:00Z\", \"value\": 62.448}, {\"ts\": \"2026-04-22T14:01:00Z\", \"value\": 58.47}, {\"ts\": \"2026-04-22T14:02:00Z\", \"value\": 69.971}, {\"ts\": \"2026-04-22T14:03:00Z\", \"value\": 56.666}, {\"ts\": \"2026-04-22T14:04:00Z\", \"value\": 67.325}, {\"ts\": \"2026-04-22T14:05:00Z\", \"value\": 63.411}, {\"ts\": \"2026-04-22T14:06:00Z\", \"value\": 56.334}, {\"ts\": \"2026-04-22T14:07:00Z\", \"value\": 66.671}, {\"ts\": \"2026-04-22T14:08:00Z\", \"value\": 55.862}, {\"ts\": \"2026-04-22T14:09:00Z\", \"value\": 64.974}, {\"ts\": \"2026-04-22T14:10:00Z\", \"value\": 56.607}, {\"ts\": \"2026-04-22T14:11:00Z\", \"value\": 57.086}, {\"ts\": \"2026-04-22T14:12:00Z\", \"value\": 64.764}, {\"ts\": \"2026-04-22T14:13:00Z\", \"value\": 74.018}, {\"ts\": \"2026-04-22T14:14:00Z\", \"value\": 57.847}, {\"ts\": \"2026-04-22T14:15:00Z\", \"value\": 60.134}, {\"ts\": \"2026-04-22T14:16:00Z\", \"value\": 69.431}, {\"ts\": \"2026-04-22T14:17:00Z\", \"value\": 76.797}, {\"ts\": \"2026-04-22T14:18:00Z\", \"value\": 68.273}, {\"ts\": \"2026-04-22T14:19:00Z\", \"value\": 64.124}, {\"ts\": \"2026-04-22T14:20:00Z\", \"value\": 77.454}, {\"ts\": \"2026-04-22T14:21:00Z\", \"value\": 56.071}, {\"ts\": \"2026-04-22T14:22:00Z\", \"value\": 74.745}, {\"ts\": \"2026-04-22T14:23:00Z\", \"value\": 61.661}, {\"ts\": \"2026-04-22T14:24:00Z\", \"value\": 58.318}, {\"ts\": \"2026-04-22T14:25:00Z\", \"value\": 57.709}, {\"ts\": \"2026-04-22T14:26:00Z\", \"value\": 62.095}, {\"ts\": \"2026-04-22T14:27:00Z\", \"value\": 73.771}, {\"ts\": \"2026-04-22T14:28:00Z\", \"value\": 59.157}, {\"ts\": \"2026-04-22T14:29:00Z\", \"value\": 68.377}, {\"ts\": \"2026-04-22T14:30:00Z\", \"value\": 69.695}, {\"ts\": \"2026-04-22T14:31:00Z\", \"value\": 67.448}, {\"ts\": \"2026-04-22T14:32:00Z\", \"value\": 346.686}, {\"ts\": \"2026-04-22T14:33:00Z\", \"value\": 852.259}, {\"ts\": \"2026-04-22T14:34:00Z\", \"value\": 1058.479}, {\"ts\": \"2026-04-22T14:35:00Z\", \"value\": 1488.94}, {\"ts\": \"2026-04-22T14:36:00Z\", \"value\": 2136.077}, {\"ts\": \"2026-04-22T14:37:00Z\", \"value\": 1980.281}, {\"ts\": \"2026-04-22T14:38:00Z\", \"value\": 2639.854}, {\"ts\": \"2026-04-22T14:39:00Z\", \"value\": 3298.726}, {\"ts\": \"2026-04-22T14:40:00Z\", \"value\": 3638.004}, {\"ts\": \"2026-04-22T14:41:00Z\", \"value\": 2847.733}, {\"ts\": \"2026-04-22T14:42:00Z\", \"value\": 2487.921}, {\"ts\": \"2026-04-22T14:43:00Z\", \"value\": 2324.669}, {\"ts\": \"2026-04-22T14:44:00Z\", \"value\": 3343.764}, {\"ts\": \"2026-04-22T14:45:00Z\", \"value\": 3497.129}, {\"ts\": \"2026-04-22T14:46:00Z\", \"value\": 3239.688}, {\"ts\": \"2026-04-22T14:47:00Z\", \"value\": 3083.741}, {\"ts\": \"2026-04-22T14:48:00Z\", \"value\": 3445.079}, {\"ts\": \"2026-04-22T14:49:00Z\", \"value\": 2942.631}, {\"ts\": \"2026-04-22T14:50:00Z\", \"value\": 2358.22}, {\"ts\": \"2026-04-22T14:51:00Z\", \"value\": 3180.01}, {\"ts\": \"2026-04-22T14:52:00Z\", \"value\": 3430.557}, {\"ts\": \"2026-04-22T14:53:00Z\", \"value\": 2805.8}, {\"ts\": \"2026-04-22T14:54:00Z\", \"value\": 2304.961}, {\"ts\": \"2026-04-22T14:55:00Z\", \"value\": 2504.502}, {\"ts\": \"2026-04-22T14:56:00Z\", \"value\": 2344.878}, {\"ts\": \"2026-04-22T14:57:00Z\", \"value\": 2456.441}, {\"ts\": \"2026-04-22T14:58:00Z\", \"value\": 2812.282}, {\"ts\": \"2026-04-22T14:59:00Z\", \"value\": 2390.242}, {\"ts\": \"2026-04-22T15:00:00Z\", \"value\": 3038.2}]"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_diff",
+    "content": "{\n  \"commit\": \"a3f9c21\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_diff",
+    "content": "commit a3f9c21e8b4d2f1a9c0e7d3b5f8a2c4e6d9b1f0a\nAuthor: Alice Chen <alice@shop.io>\nDate:   Wed Apr 22 14:29:51 2026 +0000\n\n    refactor order summary builder for readability\n\n    The old list comprehension was getting hard to follow. Split it into\n    an explicit loop so the per-order enrichment logic is clearer.\n\ndiff --git a/checkout/handlers.py b/checkout/handlers.py\nindex 8f3a2b1..c4d9e7f 100644\n--- a/checkout/handlers.py\n+++ b/checkout/handlers.py\n@@ -41,22 +41,24 @@ class CheckoutSummaryHandler(BaseHandler):\n     def build_summary(self, user_id: str) -> dict:\n         orders = Order.objects.filter(user_id=user_id, status=\"open\")\n-        order_ids = [o.id for o in orders]\n-\n-        # Single query, then group in memory\n-        all_items = OrderItem.objects.filter(order_id__in=order_ids).select_related(\"sku\")\n-        items_by_order = defaultdict(list)\n-        for item in all_items:\n-            items_by_order[item.order_id].append(item)\n-\n-        summaries = [\n-            self._summarize(o, items_by_order[o.id])\n-            for o in orders\n-        ]\n+\n+        summaries = []\n+        for order in orders:\n+            # fetch the items for this order\n+            items = OrderItem.objects.filter(order_id=order.id).select_related(\"sku\")\n+            log.debug(\n+                'db_query sql=\"SELECT * FROM order_items WHERE order_id = ?\" params=[%s]',\n+                order.id,\n+            )\n+            summaries.append(self._summarize(order, list(items)))\n+\n         return {\n             \"user_id\": user_id,\n             \"orders\": summaries,\n             \"total_cents\": sum(s[\"subtotal_cents\"] for s in summaries),\n         }\n\n     def _summarize(self, order: Order, items: list[OrderItem]) -> dict:\n         return {\n"
+  },
+  {
+    "role": "assistant",
+    "content": "Quick log confirmation."
+  },
+  {
+    "role": "tool_call",
+    "name": "bash",
+    "content": "{\n  \"command\": \"cd /mnt/session/uploads; grep -c 'FROM order_items WHERE order_id = ?' app.log; grep -n 'order_items' app.log | sed -n '1,3p'; grep -i 'pool' app.log | sed -n '1,3p'\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "30964\n19541:{\"ts\":\"2026-04-22T14:31:18.144Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-1\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id = ?\\\" params=[8576]\",\"request_id\":\"req_030ba30eb081\",\"duration_ms\":8}\n19542:{\"ts\":\"2026-04-22T14:31:18.155Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-1\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id = ?\\\" params=[7266]\",\"request_id\":\"req_030ba30eb081\",\"duration_ms\":20}\n19543:{\"ts\":\"2026-04-22T14:31:18.158Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-1\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id = ?\\\" params=[5389]\",\"request_id\":\"req_030ba30eb081\",\"duration_ms\":10}\n{\"ts\":\"2026-04-22T14:40:03.696Z\",\"level\":\"WARN\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"db_pool high utilization active=49/50\",\"request_id\":\"req_f95af1fcffdd\"}\n{\"ts\":\"2026-04-22T14:40:04.984Z\",\"level\":\"ERROR\",\"service\":\"checkout\",\"host\":\"checkout-2\",\"msg\":\"DB connection pool exhausted (active=50/50, waiters=12)\",\"request_id\":\"req_9e3cefee83b1\"}\n{\"ts\":\"2026-04-22T14:40:04.987Z\",\"level\":\"ERROR\",\"service\":\"checkout\",\"host\":\"checkout-2\",\"msg\":\"request_end status=500 path=/api/checkout/validate error=PoolTimeout\",\"request_id\":\"req_9e3cefee83b1\",\"user_id\":\"u_21061\",\"latency_ms\":4273,\"status\":500}\n"
+  },
+  {
+    "role": "assistant",
+    "content": "Checkout deploy `a3f9c21` (alice, 14:31:18) lines up with the spike. p99 sat at about 55\u201377 ms until 14:31. It reached 347 ms at 14:32 and 852 ms at 14:33. It then climbed to a plateau of about 2\u20133.6 s.\n\n- **Diff:** the commit is labelled a readability refactor of `CheckoutSummaryHandler.build_summary`. It replaced one batched `order_id__in` query with an `OrderItem` query inside the per-order loop. That is an N+1, the first item on the runbook's list.\n- **Log:** the log has 30,964 `SELECT * FROM order_items WHERE order_id = ?` queries. They start at 14:31:18, the deploy second, and repeat many times within a single `request_id`.\n- **Downstream:** the extra queries exhausted the DB pool at about 14:40 (`active=50/50, waiters=12`). Requests then failed with `PoolTimeout` and 500s.\n- **Not the cause:** the cart, auth and inventory deploys don't line up. Inventory (14:55) came after the spike began.\n- **Fix:** roll back `a3f9c21`, or restore the batched query.\n- **Confidence:** high.\n\n**Root cause:** `a3f9c21` \u2014 the refactor replaced the single batched `order_items` query in `build_summary` with one query per order, which multiplied DB round-trips per request, exhausted the connection pool, and drove checkout p99 from about 65 ms to over 2 s."
+  }
+]

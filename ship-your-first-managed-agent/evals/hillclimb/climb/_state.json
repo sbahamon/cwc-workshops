@@ -122,6 +122,24 @@
     }
   ],
   "baseline_provenance": "42 rows copied from hillclimb/ladder/v1 (Steffany, 2026-10-14): the only harness change since they ran was the one-line graders.py fix, and those rows were regraded with it from their saved transcripts (regrade.py), so a re-run would be graded identically; rows carry meta.copied_from, so spend.py doesn't count them twice",
-  "rounds": [],
-  "harness_sha": "c808e86bdb6d04f19d7590b2862192c74c4fae6ff66e530940f33ab33e9f15f3"
+  "rounds": [
+    {
+      "variant": "v1",
+      "change": "system.md: one-sentence root-cause line, written once, last; everything else on its own line above",
+      "format_all": "40/42 (95.2% \u00b1 6.4%)",
+      "format_train": "17/18",
+      "format_test": "16/16",
+      "format_val": "7/8",
+      "root_cause_train_test": "34/34",
+      "reg_verbatim": [
+        1,
+        1
+      ],
+      "val_root_cause": "8/8 (climb baseline 8/8)",
+      "verdict": "passes the C0.3 floor, within noise of it (95% sits inside format's CI); per C0.4 a within-noise pass gets one more run before the walk moves",
+      "kept": "pending the confirmation run"
+    }
+  ],
+  "harness_sha": "c808e86bdb6d04f19d7590b2862192c74c4fae6ff66e530940f33ab33e9f15f3",
+  "round": 1
 }
