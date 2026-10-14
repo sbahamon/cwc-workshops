@@ -1,0 +1,82 @@
+[
+  {
+    "role": "system",
+    "content": "You are the SRE Agent \u2014 an SRE/data-analyst agent embedded in an incident\ndashboard. The application log is mounted at /mnt/session/uploads/app.log (large; use\ngrep/python to analyze it, don't read it whole). You have local tools that\nquery the same data the dashboard shows. Correlate evidence and state findings\nplainly and concisely.\n"
+  },
+  {
+    "role": "user",
+    "content": "checkout p99 spiked ~14:39 UTC. Find the root cause."
+  },
+  {
+    "role": "tool_call",
+    "name": "read",
+    "content": "{\n  \"file_path\": \"/workspace/skills/incident-triage-runbook/SKILL.md\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "1\t---\n2\tname: incident-triage-runbook\n3\tdescription: The SRE team's runbook for triaging production latency and error-rate incidents. Use this whenever investigating an incident, a latency spike, elevated error rates, or when asked \"what caused X\" about a production service.\n4\t---\n5\t\n6\t# Incident triage\n7\t\n8\tIf you change the order below, say why in #sre.\n9\t\n10\t## Order of operations\n11\t\n12\t1. Pull deploys for the last 6h. Don't open the log first.\n13\t2. Line the deploy timestamps up against `p99_latency_ms` / `error_rate` for the paged service. State the gap (\"deploy 14:31, p99 moves 14:33\").\n14\t3. If a deploy lines up: pull the diff, read it. Check for the stuff in the next section.\n15\t4. Then grep the log to confirm. Don't grep to fish.\n16\t5. No deploy lines up \u2192 check `db_pool_utilization` across checkout/cart/auth/inventory, then upstream deps.\n17\t\n18\t## Things that have burned us\n19\t\n20\tIn rough order of how often:\n21\t\n22\t- per-row query where there used to be a batch\n23\t- cache decorator removed \"temporarily\"\n24\t- new query, no index\n25\t- blocking call in an async handler\n26\t- retry loop with no backoff\n27\t\n28\t## Write-up\n29\t\n30\tOne line at the bottom:\n31\t\n32\t> **Root cause:** `<sha>` \u2014 one sentence on the mechanism.\n33\t\n34\tIf it wasn't a deploy, put the component or upstream dep where the sha goes (`db-primary`, `stripe-api`, whatever). Still one sentence.\n35\t\n36\tEverything above that line is evidence. Keep it short; the long version goes in the postmortem doc.\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_recent_deploys",
+    "content": "{}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_recent_deploys",
+    "content": "[\n  {\n    \"ts\": \"2026-04-22T10:05:12Z\",\n    \"service\": \"cart\",\n    \"commit\": \"96207dd\",\n    \"author\": \"dave@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"bump lodash to 4.17.22\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:38:10Z\",\n    \"service\": \"checkout\",\n    \"commit\": \"de6541f\",\n    \"author\": \"alice@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"refactor order summary builder for readability\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:39:40Z\",\n    \"service\": \"inventory\",\n    \"commit\": \"a9efec4\",\n    \"author\": \"carol@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"temporarily disable catalog cache\"\n  }\n]\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_metrics",
+    "content": "{\n  \"metric\": \"p99_latency_ms\",\n  \"service\": \"checkout\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_metrics",
+    "content": "[{\"ts\": \"2026-04-22T14:00:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:01:00Z\", \"value\": 71.0}, {\"ts\": \"2026-04-22T14:02:00Z\", \"value\": 67.0}, {\"ts\": \"2026-04-22T14:03:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:04:00Z\", \"value\": 74.0}, {\"ts\": \"2026-04-22T14:05:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:06:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:07:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:08:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:09:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:10:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:11:00Z\", \"value\": 71.0}, {\"ts\": \"2026-04-22T14:12:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:13:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:14:00Z\", \"value\": 57.0}, {\"ts\": \"2026-04-22T14:15:00Z\", \"value\": 72.0}, {\"ts\": \"2026-04-22T14:16:00Z\", \"value\": 68.0}, {\"ts\": \"2026-04-22T14:17:00Z\", \"value\": 71.0}, {\"ts\": \"2026-04-22T14:18:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:19:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:20:00Z\", \"value\": 70.0}, {\"ts\": \"2026-04-22T14:21:00Z\", \"value\": 73.0}, {\"ts\": \"2026-04-22T14:22:00Z\", \"value\": 60.0}, {\"ts\": \"2026-04-22T14:23:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:24:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:25:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:26:00Z\", \"value\": 64.0}, {\"ts\": \"2026-04-22T14:27:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:28:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:29:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:30:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:31:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:32:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:33:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:34:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:35:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:36:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:37:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:38:00Z\", \"value\": 2201.0}, {\"ts\": \"2026-04-22T14:39:00Z\", \"value\": 3739.0}, {\"ts\": \"2026-04-22T14:40:00Z\", \"value\": 4048.0}, {\"ts\": \"2026-04-22T14:41:00Z\", \"value\": 4038.0}, {\"ts\": \"2026-04-22T14:42:00Z\", \"value\": 3993.0}, {\"ts\": \"2026-04-22T14:43:00Z\", \"value\": 4203.0}, {\"ts\": \"2026-04-22T14:44:00Z\", \"value\": 4193.0}, {\"ts\": \"2026-04-22T14:45:00Z\", \"value\": 3735.0}, {\"ts\": \"2026-04-22T14:46:00Z\", \"value\": 4370.0}, {\"ts\": \"2026-04-22T14:47:00Z\", \"value\": 4286.0}, {\"ts\": \"2026-04-22T14:48:00Z\", \"value\": 4215.0}, {\"ts\": \"2026-04-22T14:49:00Z\", \"value\": 4480.0}, {\"ts\": \"2026-04-22T14:50:00Z\", \"value\": 4312.0}, {\"ts\": \"2026-04-22T14:51:00Z\", \"value\": 4501.0}, {\"ts\": \"2026-04-22T14:52:00Z\", \"value\": 4358.0}, {\"ts\": \"2026-04-22T14:53:00Z\", \"value\": 4500.0}, {\"ts\": \"2026-04-22T14:54:00Z\", \"value\": 4693.0}, {\"ts\": \"2026-04-22T14:55:00Z\", \"value\": 4421.0}, {\"ts\": \"2026-04-22T14:56:00Z\", \"value\": 4807.0}, {\"ts\": \"2026-04-22T14:57:00Z\", \"value\": 4130.0}, {\"ts\": \"2026-04-22T14:58:00Z\", \"value\": 4684.0}, {\"ts\": \"2026-04-22T14:59:00Z\", \"value\": 4842.0}]"
+  },
+  {
+    "role": "assistant",
+    "content": "Spike begins 14:38, matching the checkout deploy (14:38:10), before the inventory deploy (14:39:40). Reading the diffs."
+  },
+  {
+    "role": "tool_call",
+    "name": "get_diff",
+    "content": "{\n  \"commit\": \"de6541f\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_diff",
+    "content": "commit de6541fb1403a46e4b23101cca87c6fbf26e7a75\nAuthor: Alice <alice@shop.io>\nDate:   Wed Apr 22 14:35:43 2026 +0000\n\n    refactor order summary builder for readability\n\n    The old list comprehension was getting hard to follow. Split it into\n    an explicit loop so the per-row enrichment logic is clearer.\n\ndiff --git a/checkout/handlers.py b/checkout/handlers.py\nindex 8f3a2b1..c4d9e7f 100644\n--- a/checkout/handlers.py\n+++ b/checkout/handlers.py\n@@ -41,22 +41,24 @@ class CheckoutSummaryHandler(BaseHandler):\n     def build_summary(self, user_id: str) -> dict:\n         rows = Order.objects.filter(user_id=user_id, status=\"open\")\n-        ids = [r.order_id for r in rows]\n-\n-        # Single query, then group in memory\n-        all_items = OrderItem.objects.filter(order_id__in=ids)\n-        by_id = defaultdict(list)\n-        for item in all_items:\n-            by_id[item.order_id].append(item)\n-\n-        summaries = [\n-            self._summarize(r, by_id[r.order_id])\n-            for r in rows\n-        ]\n+\n+        summaries = []\n+        for order in rows:\n+            # fetch the items for this row\n+            items = OrderItem.objects.filter(order_id=order.order_id)\n+            log.debug(\n+                'db_query sql=\"SELECT * FROM order_items WHERE order_id = ?\" params=[%s]',\n+                order.order_id,\n+            )\n+            summaries.append(self._summarize(order, list(items)))\n+\n         return {\n             \"user_id\": user_id,\n             \"rows\": summaries,\n             \"total_cents\": sum(s[\"subtotal_cents\"] for s in summaries),\n         }\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_diff",
+    "content": "{\n  \"commit\": \"a9efec4\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_diff",
+    "content": "commit a9efec4b89be11c15eeeb06d106159a8422f7654\nAuthor: Carol <carol@shop.io>\nDate:   Wed Apr 22 14:37:13 2026 +0000\n\n    temporarily disable catalog cache\n\n    Disabling the cache while we chase a stale-price report. Will restore\n    once the TTL bug is understood.\n\ndiff --git a/inventory/catalog.py b/inventory/catalog.py\nindex 1d2e3f4..5a6b7c8 100644\n--- a/inventory/catalog.py\n+++ b/inventory/catalog.py\n@@ -18,7 +18,7 @@ from .cache import cached\n\n\n-@cached(ttl=60)\n+# @cached(ttl=60)  # temporarily disabled, see INC-2241\n def load_catalog_page(page: int) -> list[dict]:\n     return [serialize(p) for p in Product.objects.page(page)]\n"
+  },
+  {
+    "role": "assistant",
+    "content": "Quick log confirmation."
+  },
+  {
+    "role": "tool_call",
+    "name": "bash",
+    "content": "{\n  \"command\": \"cd /mnt/session/uploads; grep -c 'FROM order_items WHERE order_id = ?' app.log; grep -m3 'FROM order_items' app.log; grep '14:3[89]' app.log | grep -i checkout | grep -vi db_query | head -5\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "2448\n{\"ts\":\"2026-04-22T14:00:20.212Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-2\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id IN (?)\\\" rows=7\",\"request_id\":\"req_dcbfec5c5bba\",\"duration_ms\":14}\n{\"ts\":\"2026-04-22T14:00:25.203Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id IN (?)\\\" rows=18\",\"request_id\":\"req_ceb4fa57f4f3\",\"duration_ms\":13}\n{\"ts\":\"2026-04-22T14:00:33.330Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-1\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id IN (?)\\\" rows=5\",\"request_id\":\"req_ad6bfd28be83\",\"duration_ms\":9}\n{\"ts\":\"2026-04-22T14:38:00.000Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"healthcheck OK\",\"uptime_s\":85689}\n{\"ts\":\"2026-04-22T14:38:05.955Z\",\"level\":\"INFO\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"request_start method=POST path=/api/checkout/summary\",\"request_id\":\"req_64dfbfb14ef8\",\"user_id\":\"u_97382\"}\n{\"ts\":\"2026-04-22T14:38:05.985Z\",\"level\":\"INFO\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"request_end status=200 path=/api/checkout/summary\",\"request_id\":\"req_64dfbfb14ef8\",\"user_id\":\"u_97382\",\"latency_ms\":30,\"status\":200}\n{\"ts\":\"2026-04-22T14:38:10.000Z\",\"level\":\"INFO\",\"service\":\"checkout\",\"host\":\"checkout-1\",\"msg\":\"deploy_complete version=de6541f strategy=rolling\",\"commit\":\"de6541f\"}\n{\"ts\":\"2026-04-22T14:38:22.413Z\",\"level\":\"INFO\",\"service\":\"checkout\",\"host\":\"checkout-2\",\"msg\":\"request_start method=POST path=/api/checkout/submit\",\"request_id\":\"req_93dbee79d24d\",\"user_id\":\"u_88344\"}\n"
+  },
+  {
+    "role": "assistant",
+    "content": "**Timeline**\n- 14:38:10: checkout deploys `de6541f`. Checkout p99 goes from about 78ms at 14:37 to 2201ms at 14:38, then about 4000ms or more.\n- 14:39:40: inventory deploys `a9efec4`, which disables the catalog cache. This is 90 seconds after the spike started, so it can't be the trigger. It could add load later, but the spike predates it.\n\n**Diff of `de6541f`**\n- It labels itself a readability refactor.\n- It replaces one batched `order_items WHERE order_id IN (...)` query with a query per order inside a loop. That is an N+1 query.\n\n**Log confirmation**\n- Before the deploy, checkout logs the batched `IN (?)` query at 9\u201314ms.\n- After the deploy, the log has 2448 per-row `WHERE order_id = ?` queries.\n\nI did not check `db_pool_utilization`, and I did not measure how much `a9efec4` contributes to the elevated latency.\n\n**Root cause:** `de6541f`. The \"readability refactor\" in `CheckoutSummaryHandler.build_summary` replaced the single batched `order_items` query with one query per order, and the added round trips drove checkout p99 from about 78ms to over 4s.\n\n**Fix:** revert `de6541f`. Separately, restore the cache in `a9efec4` (INC-2241) once the stale-price investigation is done."
+  }
+]
