@@ -1,0 +1,78 @@
+[
+  {
+    "role": "system",
+    "content": "You are the SRE Agent \u2014 an SRE/data-analyst agent embedded in an incident\ndashboard. The application log is mounted at /mnt/session/uploads/app.log (large; use\ngrep/python to analyze it, don't read it whole). You have local tools that\nquery the same data the dashboard shows. Correlate evidence and state findings\nplainly and concisely.\n"
+  },
+  {
+    "role": "user",
+    "content": "checkout p99 spiked ~14:30 UTC. Find the root cause."
+  },
+  {
+    "role": "tool_call",
+    "name": "read",
+    "content": "{\n  \"file_path\": \"/workspace/skills/incident-triage-runbook/SKILL.md\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "1\t---\n2\tname: incident-triage-runbook\n3\tdescription: The SRE team's runbook for triaging production latency and error-rate incidents. Use this whenever investigating an incident, a latency spike, elevated error rates, or when asked \"what caused X\" about a production service.\n4\t---\n5\t\n6\t# Incident triage\n7\t\n8\tIf you change the order below, say why in #sre.\n9\t\n10\t## Order of operations\n11\t\n12\t1. Pull deploys for the last 6h. Don't open the log first.\n13\t2. Line the deploy timestamps up against `p99_latency_ms` / `error_rate` for the paged service. State the gap (\"deploy 14:31, p99 moves 14:33\").\n14\t3. If a deploy lines up: pull the diff, read it. Check for the stuff in the next section.\n15\t4. Then grep the log to confirm. Don't grep to fish.\n16\t5. No deploy lines up \u2192 check `db_pool_utilization` across checkout/cart/auth/inventory, then upstream deps.\n17\t\n18\t## Things that have burned us\n19\t\n20\tIn rough order of how often:\n21\t\n22\t- per-row query where there used to be a batch\n23\t- cache decorator removed \"temporarily\"\n24\t- new query, no index\n25\t- blocking call in an async handler\n26\t- retry loop with no backoff\n27\t\n28\t## Write-up\n29\t\n30\tOne line at the bottom:\n31\t\n32\t> **Root cause:** `<sha>` \u2014 one sentence on the mechanism.\n33\t\n34\tIf it wasn't a deploy, put the component or upstream dep where the sha goes (`db-primary`, `stripe-api`, whatever). Still one sentence.\n35\t\n36\tEverything above that line is evidence. Keep it short; the long version goes in the postmortem doc.\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_recent_deploys",
+    "content": "{}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_recent_deploys",
+    "content": "[\n  {\n    \"ts\": \"2026-04-22T13:02:08Z\",\n    \"service\": \"inventory\",\n    \"commit\": \"e0a27f7\",\n    \"author\": \"erin@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"add SKU validation on reserve endpoint\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:06:20Z\",\n    \"service\": \"checkout\",\n    \"commit\": \"371dfe2\",\n    \"author\": \"alice@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"refactor order summary builder for readability\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:18:10Z\",\n    \"service\": \"checkout\",\n    \"commit\": \"db46df5\",\n    \"author\": \"carol@shop.io\",\n    \"status\": \"rolled_back\",\n    \"summary\": \"temporarily disable catalog cache\",\n    \"rolled_back_at\": \"2026-04-22T14:23:40Z\"\n  }\n]\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_metrics",
+    "content": "{\n  \"metric\": \"p99_latency_ms\",\n  \"service\": \"checkout\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_metrics",
+    "content": "[{\"ts\": \"2026-04-22T14:00:00Z\", \"value\": 68.0}, {\"ts\": \"2026-04-22T14:01:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:02:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:03:00Z\", \"value\": 74.0}, {\"ts\": \"2026-04-22T14:04:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:05:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:06:00Z\", \"value\": 101.0}, {\"ts\": \"2026-04-22T14:07:00Z\", \"value\": 122.0}, {\"ts\": \"2026-04-22T14:08:00Z\", \"value\": 141.0}, {\"ts\": \"2026-04-22T14:09:00Z\", \"value\": 156.0}, {\"ts\": \"2026-04-22T14:10:00Z\", \"value\": 156.0}, {\"ts\": \"2026-04-22T14:11:00Z\", \"value\": 170.0}, {\"ts\": \"2026-04-22T14:12:00Z\", \"value\": 192.0}, {\"ts\": \"2026-04-22T14:13:00Z\", \"value\": 210.0}, {\"ts\": \"2026-04-22T14:14:00Z\", \"value\": 222.0}, {\"ts\": \"2026-04-22T14:15:00Z\", \"value\": 236.0}, {\"ts\": \"2026-04-22T14:16:00Z\", \"value\": 254.0}, {\"ts\": \"2026-04-22T14:17:00Z\", \"value\": 265.0}, {\"ts\": \"2026-04-22T14:18:00Z\", \"value\": 279.0}, {\"ts\": \"2026-04-22T14:19:00Z\", \"value\": 294.0}, {\"ts\": \"2026-04-22T14:20:00Z\", \"value\": 294.0}, {\"ts\": \"2026-04-22T14:21:00Z\", \"value\": 324.0}, {\"ts\": \"2026-04-22T14:22:00Z\", \"value\": 339.0}, {\"ts\": \"2026-04-22T14:23:00Z\", \"value\": 357.0}, {\"ts\": \"2026-04-22T14:24:00Z\", \"value\": 357.0}, {\"ts\": \"2026-04-22T14:25:00Z\", \"value\": 373.0}, {\"ts\": \"2026-04-22T14:26:00Z\", \"value\": 400.0}, {\"ts\": \"2026-04-22T14:27:00Z\", \"value\": 414.0}, {\"ts\": \"2026-04-22T14:28:00Z\", \"value\": 412.0}, {\"ts\": \"2026-04-22T14:29:00Z\", \"value\": 2152.0}, {\"ts\": \"2026-04-22T14:30:00Z\", \"value\": 3684.0}, {\"ts\": \"2026-04-22T14:31:00Z\", \"value\": 4070.0}, {\"ts\": \"2026-04-22T14:32:00Z\", \"value\": 4030.0}, {\"ts\": \"2026-04-22T14:33:00Z\", \"value\": 3984.0}, {\"ts\": \"2026-04-22T14:34:00Z\", \"value\": 4160.0}, {\"ts\": \"2026-04-22T14:35:00Z\", \"value\": 4117.0}, {\"ts\": \"2026-04-22T14:36:00Z\", \"value\": 4294.0}, {\"ts\": \"2026-04-22T14:37:00Z\", \"value\": 4055.0}, {\"ts\": \"2026-04-22T14:38:00Z\", \"value\": 4008.0}, {\"ts\": \"2026-04-22T14:39:00Z\", \"value\": 4290.0}, {\"ts\": \"2026-04-22T14:40:00Z\", \"value\": 4189.0}, {\"ts\": \"2026-04-22T14:41:00Z\", \"value\": 4568.0}, {\"ts\": \"2026-04-22T14:42:00Z\", \"value\": 4439.0}, {\"ts\": \"2026-04-22T14:43:00Z\", \"value\": 4234.0}, {\"ts\": \"2026-04-22T14:44:00Z\", \"value\": 4620.0}, {\"ts\": \"2026-04-22T14:45:00Z\", \"value\": 4553.0}, {\"ts\": \"2026-04-22T14:46:00Z\", \"value\": 4471.0}, {\"ts\": \"2026-04-22T14:47:00Z\", \"value\": 4884.0}, {\"ts\": \"2026-04-22T14:48:00Z\", \"value\": 4818.0}, {\"ts\": \"2026-04-22T14:49:00Z\", \"value\": 4586.0}, {\"ts\": \"2026-04-22T14:50:00Z\", \"value\": 4309.0}, {\"ts\": \"2026-04-22T14:51:00Z\", \"value\": 4136.0}, {\"ts\": \"2026-04-22T14:52:00Z\", \"value\": 5130.0}, {\"ts\": \"2026-04-22T14:53:00Z\", \"value\": 5053.0}, {\"ts\": \"2026-04-22T14:54:00Z\", \"value\": 4847.0}, {\"ts\": \"2026-04-22T14:55:00Z\", \"value\": 5281.0}, {\"ts\": \"2026-04-22T14:56:00Z\", \"value\": 4947.0}, {\"ts\": \"2026-04-22T14:57:00Z\", \"value\": 4690.0}, {\"ts\": \"2026-04-22T14:58:00Z\", \"value\": 5194.0}, {\"ts\": \"2026-04-22T14:59:00Z\", \"value\": 5231.0}]"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_diff",
+    "content": "{\n  \"commit\": \"371dfe2\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_diff",
+    "content": "commit 371dfe2a6f309ea85c76f329d601f3abc93e4c92\nAuthor: Alice <alice@shop.io>\nDate:   Wed Apr 22 14:03:53 2026 +0000\n\n    refactor order summary builder for readability\n\n    The old list comprehension was getting hard to follow. Split it into\n    an explicit loop so the per-row enrichment logic is clearer.\n\ndiff --git a/checkout/handlers.py b/checkout/handlers.py\nindex 8f3a2b1..c4d9e7f 100644\n--- a/checkout/handlers.py\n+++ b/checkout/handlers.py\n@@ -41,22 +41,24 @@ class CheckoutSummaryHandler(BaseHandler):\n     def build_summary(self, user_id: str) -> dict:\n         rows = Order.objects.filter(user_id=user_id, status=\"open\")\n-        ids = [r.order_id for r in rows]\n-\n-        # Single query, then group in memory\n-        all_items = OrderItem.objects.filter(order_id__in=ids)\n-        by_id = defaultdict(list)\n-        for item in all_items:\n-            by_id[item.order_id].append(item)\n-\n-        summaries = [\n-            self._summarize(r, by_id[r.order_id])\n-            for r in rows\n-        ]\n+\n+        summaries = []\n+        for order in rows:\n+            # fetch the items for this row\n+            items = OrderItem.objects.filter(order_id=order.order_id)\n+            log.debug(\n+                'db_query sql=\"SELECT * FROM order_items WHERE order_id = ?\" params=[%s]',\n+                order.order_id,\n+            )\n+            summaries.append(self._summarize(order, list(items)))\n+\n         return {\n             \"user_id\": user_id,\n             \"rows\": summaries,\n             \"total_cents\": sum(s[\"subtotal_cents\"] for s in summaries),\n         }\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_metrics",
+    "content": "{\n  \"metric\": \"db_pool_utilization\",\n  \"service\": \"checkout\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_metrics",
+    "content": "[{\"ts\": \"2026-04-22T14:00:00Z\", \"value\": 0.172}, {\"ts\": \"2026-04-22T14:01:00Z\", \"value\": 0.161}, {\"ts\": \"2026-04-22T14:02:00Z\", \"value\": 0.084}, {\"ts\": \"2026-04-22T14:03:00Z\", \"value\": 0.153}, {\"ts\": \"2026-04-22T14:04:00Z\", \"value\": 0.119}, {\"ts\": \"2026-04-22T14:05:00Z\", \"value\": 0.165}, {\"ts\": \"2026-04-22T14:06:00Z\", \"value\": 0.141}, {\"ts\": \"2026-04-22T14:07:00Z\", \"value\": 0.216}, {\"ts\": \"2026-04-22T14:08:00Z\", \"value\": 0.17}, {\"ts\": \"2026-04-22T14:09:00Z\", \"value\": 0.182}, {\"ts\": \"2026-04-22T14:10:00Z\", \"value\": 0.299}, {\"ts\": \"2026-04-22T14:11:00Z\", \"value\": 0.254}, {\"ts\": \"2026-04-22T14:12:00Z\", \"value\": 0.286}, {\"ts\": \"2026-04-22T14:13:00Z\", \"value\": 0.329}, {\"ts\": \"2026-04-22T14:14:00Z\", \"value\": 0.358}, {\"ts\": \"2026-04-22T14:15:00Z\", \"value\": 0.386}, {\"ts\": \"2026-04-22T14:16:00Z\", \"value\": 0.396}, {\"ts\": \"2026-04-22T14:17:00Z\", \"value\": 0.405}, {\"ts\": \"2026-04-22T14:18:00Z\", \"value\": 0.442}, {\"ts\": \"2026-04-22T14:19:00Z\", \"value\": 0.461}, {\"ts\": \"2026-04-22T14:20:00Z\", \"value\": 0.477}, {\"ts\": \"2026-04-22T14:21:00Z\", \"value\": 0.542}, {\"ts\": \"2026-04-22T14:22:00Z\", \"value\": 0.541}, {\"ts\": \"2026-04-22T14:23:00Z\", \"value\": 0.613}, {\"ts\": \"2026-04-22T14:24:00Z\", \"value\": 0.623}, {\"ts\": \"2026-04-22T14:25:00Z\", \"value\": 0.617}, {\"ts\": \"2026-04-22T14:26:00Z\", \"value\": 0.678}, {\"ts\": \"2026-04-22T14:27:00Z\", \"value\": 0.695}, {\"ts\": \"2026-04-22T14:28:00Z\", \"value\": 0.708}, {\"ts\": \"2026-04-22T14:29:00Z\", \"value\": 0.758}, {\"ts\": \"2026-04-22T14:30:00Z\", \"value\": 0.775}, {\"ts\": \"2026-04-22T14:31:00Z\", \"value\": 0.797}, {\"ts\": \"2026-04-22T14:32:00Z\", \"value\": 0.815}, {\"ts\": \"2026-04-22T14:33:00Z\", \"value\": 0.847}, {\"ts\": \"2026-04-22T14:34:00Z\", \"value\": 0.88}, {\"ts\": \"2026-04-22T14:35:00Z\", \"value\": 0.903}, {\"ts\": \"2026-04-22T14:36:00Z\", \"value\": 0.928}, {\"ts\": \"2026-04-22T14:37:00Z\", \"value\": 0.951}, {\"ts\": \"2026-04-22T14:38:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:39:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:40:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:41:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:42:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:43:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:44:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:45:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:46:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:47:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:48:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:49:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:50:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:51:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:52:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:53:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:54:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:55:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:56:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:57:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:58:00Z\", \"value\": 1.0}, {\"ts\": \"2026-04-22T14:59:00Z\", \"value\": 1.0}]"
+  },
+  {
+    "role": "assistant",
+    "content": "Quick log confirmation."
+  },
+  {
+    "role": "tool_call",
+    "name": "bash",
+    "content": "{\n  \"command\": \"cd /mnt/session/uploads; grep -c 'order_items WHERE order_id = ' app.log; grep -E '14:(2[89]|30):' app.log | grep -iE 'warn|error|timeout|pool' | head -8\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "3770\n{\"ts\":\"2026-04-22T14:29:20.000Z\",\"level\":\"WARN\",\"service\":\"auth\",\"host\":\"auth-3\",\"msg\":\"GC pause 264ms (G1 young gen)\"}\n{\"ts\":\"2026-04-22T14:29:57.000Z\",\"level\":\"WARN\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"GC pause 88ms (G1 young gen)\"}\n{\"ts\":\"2026-04-22T14:30:34.000Z\",\"level\":\"WARN\",\"service\":\"checkout\",\"host\":\"checkout-2\",\"msg\":\"GC pause 137ms (G1 young gen)\"}\n"
+  },
+  {
+    "role": "assistant",
+    "content": "**Timeline (UTC, 2026-04-22)**\n- 14:06:20: checkout deploy `371dfe2` (\"refactor order summary builder for readability\"). p99 was about 75 ms and starts climbing the same minute.\n- 14:18\u201314:23: `db46df5` (catalog cache disabled) was live and then rolled back. p99 had already been climbing for 12 minutes before it deployed, and it kept climbing after the rollback. I don't think it caused this.\n- 14:06\u201314:28: p99 rises steadily from 79 ms to 412 ms. Checkout `db_pool_utilization` rises from about 0.14 to 0.71 over the same period.\n- 14:29: p99 jumps to about 2.1 s, then to about 4 s by 14:31. Pool utilization is about 0.76 at 14:29.\n- 14:38 onward: pool utilization is pinned at 1.0 and p99 stays at 4\u20135 s.\n\n**Diff of `371dfe2`:** it replaced one batched `OrderItem ... order_id__in=ids` query with a query per order inside a loop. That is an N+1, the first item on the runbook's list. The diff also adds a debug log line for each per-row query.\n\n**Log check:** `app.log` has 3,770 lines matching that per-row query text, `SELECT * FROM order_items WHERE order_id = ?`. The only WARN lines I found in the 14:29\u201314:30 window were short GC pauses, which are too small to explain a multi-second p99.\n\n**Caveats:**\n- I did not check the other services' pool utilization or the pool's timing in the log. The pool saturating is consistent with the N+1 but not proven by what I pulled.\n- The step from about 400 ms to about 2 s at 14:29 looks like the pool hitting a queueing threshold, not a new change. No deploy lines up with 14:29.\n- I could not tie that step to a specific event. If you want to be sure, check whether anything else changed at 14:29, such as a traffic increase.\n- `371dfe2` is still live, so reverting it is the fix.\n\n> **Root cause:** `371dfe2` \u2014 the refactor replaced a single batched order-items query with one query per order, which gradually saturated checkout's DB connection pool and drove p99 to 4\u20135 s."
+  }
+]

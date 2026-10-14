@@ -1,0 +1,16 @@
+Proposed fix, NOT applied (graders.py is a harness path; applying it changes the
+harness sha and needs re-approval). Found in ladder/v1: "`de6541f`. The ..." and
+"`a3f9c21`. The ..." named the correct sha but scored root_cause=0, because the
+identifier's first token kept the trailing period. After applying: remove the
+xfail marker on tests/test_graders.py::test_sha_followed_by_punctuation, re-grade
+every variant in place from stored traces (shadow_regrade.py shows the result),
+and re-approve the harness.
+
+--- a/ship-your-first-managed-agent/evals/graders.py
++++ b/ship-your-first-managed-agent/evals/graders.py
+@@ def grade_root_cause(text: str, answer: dict) -> int:
+     ident = _identifier(body)
+     if answer["kind"] == "deploy":
+-        first = ident.split(" ", 1)[0]
++        first = ident.split(" ", 1)[0].rstrip(".,;:!?")
+         return int(bool(HEX.fullmatch(first)) and first[:7] == answer["culprit_short"])

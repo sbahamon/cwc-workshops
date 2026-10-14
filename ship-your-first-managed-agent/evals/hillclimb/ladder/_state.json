@@ -93,6 +93,57 @@
       "label": "Out tokens"
     }
   ],
-  "walk": [],
-  "harness_sha": "64ecf9d86b32fa4c42dc1fcd1d7efa38429f263cd402ac82903ef40f9edbc1e3"
+  "walk": [
+    {
+      "variant": "baseline",
+      "model": "claude-opus-4-8",
+      "effort": null,
+      "role": "baseline",
+      "verdict": "reference",
+      "adopted": true,
+      "why": "the workshop's model at its default effort (echoes xhigh); sets the floor: root_cause(train+test) >= 90.0%"
+    },
+    {
+      "variant": "v1",
+      "model": "claude-sonnet-5-5",
+      "effort": "low",
+      "role": "walk",
+      "verdict": "fail (format 61.9% < 95%; root_cause passes)",
+      "adopted": false,
+      "why": "entry cell: highest cost-plausible tier at low effort (Opus 5.5 excluded)"
+    },
+    {
+      "variant": "v2",
+      "model": "claude-opus-4-8",
+      "effort": "low",
+      "role": "diagnostic",
+      "verdict": "would pass (root_cause 100%, format 100%) but off-path by design",
+      "adopted": false,
+      "why": "round-0 diagnostic: is the effort dial alive on the old model? Yes: out tokens 4371 -> 1735/session, cost $0.241 -> $0.137"
+    },
+    {
+      "variant": "v3",
+      "model": "claude-sonnet-5-5",
+      "effort": "medium",
+      "role": "walk",
+      "verdict": "fail (format 69.0% < 95%; root_cause 100%)",
+      "adopted": false,
+      "why": "v1 failed -> one notch right"
+    },
+    {
+      "variant": "v4",
+      "model": "claude-sonnet-5-5",
+      "effort": "high",
+      "role": "walk",
+      "verdict": "fail (format 52.4% < 95%; root_cause 100%)",
+      "adopted": false,
+      "why": "v3 failed -> second and last notch right"
+    }
+  ],
+  "harness_sha": "64ecf9d86b32fa4c42dc1fcd1d7efa38429f263cd402ac82903ef40f9edbc1e3",
+  "walk_status": {
+    "stopped": "2026-10-14",
+    "reason": "no cell cleared the floor; Sonnet row exhausted after two notches right; tier monotonicity presumes Haiku fails at the same effort; the only extension tier (Opus 5.5) is excluded; the $20 overnight stop was also reached ($19.96)",
+    "incumbent": "baseline"
+  }
 }

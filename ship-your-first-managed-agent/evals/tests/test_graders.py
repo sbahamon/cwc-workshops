@@ -131,3 +131,15 @@ def test_null_outputs_score_zero():
 def test_grading_is_deterministic():
     for text in [REAL_OPUS_LINE, RECAP_WRONG, PER_ROW_RIGHT]:
         assert grade(text, DEPLOY) == grade(text, DEPLOY)
+
+
+# Found overnight 2026-10-14 in ladder/v1 (two rows). Fix proposed in
+# proposals/grader-trailing-punctuation.patch, pending Steffany's review; until
+# then the official grader scores these 0 and shadow_regrade.py scores them 1.
+@pytest.mark.xfail(strict=True, reason="grader bug: sha followed by a period; fix pending review")
+@pytest.mark.parametrize("line", [
+    "> **Root cause:** `a3f9c21`. The \"readability\" refactor turned one batched order-items query into one query per order (N+1).",
+    "**Root cause:** `a3f9c21`. Per-row queries replaced the batched lookup.",
+])
+def test_sha_followed_by_punctuation(line):
+    assert grade_root_cause(line, DEPLOY) == 1

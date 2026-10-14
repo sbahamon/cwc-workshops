@@ -1,0 +1,92 @@
+[
+  {
+    "role": "system",
+    "content": "You are the SRE Agent \u2014 an SRE/data-analyst agent embedded in an incident\ndashboard. The application log is mounted at /mnt/session/uploads/app.log (large; use\ngrep/python to analyze it, don't read it whole). You have local tools that\nquery the same data the dashboard shows. Correlate evidence and state findings\nplainly and concisely.\n"
+  },
+  {
+    "role": "user",
+    "content": "checkout p99 spiked ~09:28 UTC. Find the root cause."
+  },
+  {
+    "role": "tool_call",
+    "name": "read",
+    "content": "{\n  \"file_path\": \"/workspace/skills/incident-triage-runbook/SKILL.md\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "1\t---\n2\tname: incident-triage-runbook\n3\tdescription: The SRE team's runbook for triaging production latency and error-rate incidents. Use this whenever investigating an incident, a latency spike, elevated error rates, or when asked \"what caused X\" about a production service.\n4\t---\n5\t\n6\t# Incident triage\n7\t\n8\tIf you change the order below, say why in #sre.\n9\t\n10\t## Order of operations\n11\t\n12\t1. Pull deploys for the last 6h. Don't open the log first.\n13\t2. Line the deploy timestamps up against `p99_latency_ms` / `error_rate` for the paged service. State the gap (\"deploy 14:31, p99 moves 14:33\").\n14\t3. If a deploy lines up: pull the diff, read it. Check for the stuff in the next section.\n15\t4. Then grep the log to confirm. Don't grep to fish.\n16\t5. No deploy lines up \u2192 check `db_pool_utilization` across checkout/cart/auth/inventory, then upstream deps.\n17\t\n18\t## Things that have burned us\n19\t\n20\tIn rough order of how often:\n21\t\n22\t- per-row query where there used to be a batch\n23\t- cache decorator removed \"temporarily\"\n24\t- new query, no index\n25\t- blocking call in an async handler\n26\t- retry loop with no backoff\n27\t\n28\t## Write-up\n29\t\n30\tOne line at the bottom:\n31\t\n32\t> **Root cause:** `<sha>` \u2014 one sentence on the mechanism.\n33\t\n34\tIf it wasn't a deploy, put the component or upstream dep where the sha goes (`db-primary`, `stripe-api`, whatever). Still one sentence.\n35\t\n36\tEverything above that line is evidence. Keep it short; the long version goes in the postmortem doc.\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_recent_deploys",
+    "content": "{}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_recent_deploys",
+    "content": "[\n  {\n    \"ts\": \"2026-04-23T05:41:19Z\",\n    \"service\": \"cart\",\n    \"commit\": \"63af5b8\",\n    \"author\": \"dave@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"bump lodash to 4.17.22\"\n  },\n  {\n    \"ts\": \"2026-04-23T08:52:44Z\",\n    \"service\": \"auth\",\n    \"commit\": \"5e06a12\",\n    \"author\": \"grace@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"promo banner flag (off)\"\n  },\n  {\n    \"ts\": \"2026-04-23T09:27:31Z\",\n    \"service\": \"checkout\",\n    \"commit\": \"7bd6579\",\n    \"author\": \"alice@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"simplify order summary assembly\"\n  }\n]\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_metrics",
+    "content": "{\n  \"metric\": \"p99_latency_ms\",\n  \"service\": \"checkout\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_metrics",
+    "content": "[{\"ts\": \"2026-04-23T09:00:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-23T09:01:00Z\", \"value\": 71.0}, {\"ts\": \"2026-04-23T09:02:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-23T09:03:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-23T09:04:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-23T09:05:00Z\", \"value\": 72.0}, {\"ts\": \"2026-04-23T09:06:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-23T09:07:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-23T09:08:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-23T09:09:00Z\", \"value\": 73.0}, {\"ts\": \"2026-04-23T09:10:00Z\", \"value\": 49.0}, {\"ts\": \"2026-04-23T09:11:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-23T09:12:00Z\", \"value\": 60.0}, {\"ts\": \"2026-04-23T09:13:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-23T09:14:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-23T09:15:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-23T09:16:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-23T09:17:00Z\", \"value\": 72.0}, {\"ts\": \"2026-04-23T09:18:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-23T09:19:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-23T09:20:00Z\", \"value\": 74.0}, {\"ts\": \"2026-04-23T09:21:00Z\", \"value\": 67.0}, {\"ts\": \"2026-04-23T09:22:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-23T09:23:00Z\", \"value\": 68.0}, {\"ts\": \"2026-04-23T09:24:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-23T09:25:00Z\", \"value\": 72.0}, {\"ts\": \"2026-04-23T09:26:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-23T09:27:00Z\", \"value\": 3548.0}, {\"ts\": \"2026-04-23T09:28:00Z\", \"value\": 3874.0}, {\"ts\": \"2026-04-23T09:29:00Z\", \"value\": 3709.0}, {\"ts\": \"2026-04-23T09:30:00Z\", \"value\": 3991.0}, {\"ts\": \"2026-04-23T09:31:00Z\", \"value\": 3668.0}, {\"ts\": \"2026-04-23T09:32:00Z\", \"value\": 3882.0}, {\"ts\": \"2026-04-23T09:33:00Z\", \"value\": 3625.0}, {\"ts\": \"2026-04-23T09:34:00Z\", \"value\": 4351.0}, {\"ts\": \"2026-04-23T09:35:00Z\", \"value\": 4101.0}, {\"ts\": \"2026-04-23T09:36:00Z\", \"value\": 3764.0}, {\"ts\": \"2026-04-23T09:37:00Z\", \"value\": 4371.0}, {\"ts\": \"2026-04-23T09:38:00Z\", \"value\": 4383.0}, {\"ts\": \"2026-04-23T09:39:00Z\", \"value\": 3985.0}, {\"ts\": \"2026-04-23T09:40:00Z\", \"value\": 3514.0}, {\"ts\": \"2026-04-23T09:41:00Z\", \"value\": 4506.0}, {\"ts\": \"2026-04-23T09:42:00Z\", \"value\": 4395.0}, {\"ts\": \"2026-04-23T09:43:00Z\", \"value\": 4203.0}, {\"ts\": \"2026-04-23T09:44:00Z\", \"value\": 4395.0}, {\"ts\": \"2026-04-23T09:45:00Z\", \"value\": 3549.0}, {\"ts\": \"2026-04-23T09:46:00Z\", \"value\": 4878.0}, {\"ts\": \"2026-04-23T09:47:00Z\", \"value\": 4979.0}, {\"ts\": \"2026-04-23T09:48:00Z\", \"value\": 4995.0}, {\"ts\": \"2026-04-23T09:49:00Z\", \"value\": 4662.0}, {\"ts\": \"2026-04-23T09:50:00Z\", \"value\": 5103.0}, {\"ts\": \"2026-04-23T09:51:00Z\", \"value\": 4953.0}, {\"ts\": \"2026-04-23T09:52:00Z\", \"value\": 5157.0}, {\"ts\": \"2026-04-23T09:53:00Z\", \"value\": 4964.0}, {\"ts\": \"2026-04-23T09:54:00Z\", \"value\": 5349.0}, {\"ts\": \"2026-04-23T09:55:00Z\", \"value\": 5083.0}, {\"ts\": \"2026-04-23T09:56:00Z\", \"value\": 5264.0}, {\"ts\": \"2026-04-23T09:57:00Z\", \"value\": 5277.0}, {\"ts\": \"2026-04-23T09:58:00Z\", \"value\": 5043.0}, {\"ts\": \"2026-04-23T09:59:00Z\", \"value\": 4582.0}]"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_metrics",
+    "content": "{\n  \"metric\": \"error_rate\",\n  \"service\": \"checkout\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_metrics",
+    "content": "[{\"ts\": \"2026-04-23T09:00:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:01:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:02:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:03:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:04:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:05:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:06:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:07:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:08:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:09:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:10:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:11:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:12:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:13:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:14:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:15:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:16:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:17:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:18:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:19:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:20:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:21:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:22:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:23:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:24:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:25:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:26:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:27:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:28:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:29:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:30:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:31:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:32:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:33:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:34:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:35:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:36:00Z\", \"value\": 0.2}, {\"ts\": \"2026-04-23T09:37:00Z\", \"value\": 0.5}, {\"ts\": \"2026-04-23T09:38:00Z\", \"value\": 0.2727}, {\"ts\": \"2026-04-23T09:39:00Z\", \"value\": 0.1429}, {\"ts\": \"2026-04-23T09:40:00Z\", \"value\": 0.2}, {\"ts\": \"2026-04-23T09:41:00Z\", \"value\": 0.2}, {\"ts\": \"2026-04-23T09:42:00Z\", \"value\": 0.125}, {\"ts\": \"2026-04-23T09:43:00Z\", \"value\": 0.2727}, {\"ts\": \"2026-04-23T09:44:00Z\", \"value\": 0.1538}, {\"ts\": \"2026-04-23T09:45:00Z\", \"value\": 0.1667}, {\"ts\": \"2026-04-23T09:46:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:47:00Z\", \"value\": 0.125}, {\"ts\": \"2026-04-23T09:48:00Z\", \"value\": 0.5}, {\"ts\": \"2026-04-23T09:49:00Z\", \"value\": 0.3333}, {\"ts\": \"2026-04-23T09:50:00Z\", \"value\": 0.3846}, {\"ts\": \"2026-04-23T09:51:00Z\", \"value\": 0.5}, {\"ts\": \"2026-04-23T09:52:00Z\", \"value\": 0.2222}, {\"ts\": \"2026-04-23T09:53:00Z\", \"value\": 0.5556}, {\"ts\": \"2026-04-23T09:54:00Z\", \"value\": 0.4286}, {\"ts\": \"2026-04-23T09:55:00Z\", \"value\": 0.5}, {\"ts\": \"2026-04-23T09:56:00Z\", \"value\": 0.3333}, {\"ts\": \"2026-04-23T09:57:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-23T09:58:00Z\", \"value\": 0.4545}, {\"ts\": \"2026-04-23T09:59:00Z\", \"value\": 0.4286}]"
+  },
+  {
+    "role": "assistant",
+    "content": "Checkout deploy 09:27:31, p99 jumps at 09:27. Pull the diff."
+  },
+  {
+    "role": "tool_call",
+    "name": "get_diff",
+    "content": "{\n  \"commit\": \"7bd6579\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_diff",
+    "content": "commit 7bd6579e3a0df99f79e81aea567e05a6a781176a\nAuthor: Alice <alice@shop.io>\nDate:   Thu Apr 23 09:25:04 2026 +0000\n\n    simplify order summary assembly\n\n    The old list comprehension was getting hard to follow. Split it into\n    an explicit loop so the per-row enrichment logic is clearer.\n\ndiff --git a/checkout/handlers.py b/checkout/handlers.py\nindex 8f3a2b1..c4d9e7f 100644\n--- a/checkout/handlers.py\n+++ b/checkout/handlers.py\n@@ -41,22 +41,24 @@ class CheckoutSummaryHandler(BaseHandler):\n     def build_summary(self, user_id: str) -> dict:\n         rows = Order.objects.filter(user_id=user_id, status=\"open\")\n-        ids = [r.order_id for r in rows]\n-\n-        # Single query, then group in memory\n-        all_items = OrderItem.objects.filter(order_id__in=ids)\n-        by_id = defaultdict(list)\n-        for item in all_items:\n-            by_id[item.order_id].append(item)\n-\n-        summaries = [\n-            self._summarize(r, by_id[r.order_id])\n-            for r in rows\n-        ]\n+\n+        summaries = []\n+        for order in rows:\n+            # fetch the items for this row\n+            items = OrderItem.objects.filter(order_id=order.order_id)\n+            log.debug(\n+                'db_query sql=\"SELECT * FROM order_items WHERE order_id = ?\" params=[%s]',\n+                order.order_id,\n+            )\n+            summaries.append(self._summarize(order, list(items)))\n+\n         return {\n             \"user_id\": user_id,\n             \"rows\": summaries,\n             \"total_cents\": sum(s[\"subtotal_cents\"] for s in summaries),\n         }\n"
+  },
+  {
+    "role": "assistant",
+    "content": "Diff shows a batch query replaced by a per-row query (N+1). Next I'll check the log."
+  },
+  {
+    "role": "tool_call",
+    "name": "bash",
+    "content": "{\n  \"command\": \"cd /mnt/session/uploads; grep -c 'FROM order_items WHERE order_id = ?' app.log; grep -m3 'FROM order_items WHERE order_id = ?' app.log; grep -m2 'order_id IN\\\\|order_id__in' app.log; grep -E ' (ERROR|WARN)' app.log | awk '{print $0}' | cut -c1-200 | sed -n '1,8p'; python3 - <<'E'\\nimport re,collections\\nc=collections.Counter()\\nfor l in open('app.log',errors='ignore'):\\n    if 'FROM order_items WHERE order_id = ?' in l: c[l[:16]]+=1\\nprint(sorted(c.items())[:3], sorted(c.items())[-2:])\\nE\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "3486\n{\"ts\":\"2026-04-23T09:27:32.390Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id = ?\\\" params=[1064]\",\"request_id\":\"req_cd9a7e0db2fd\",\"duration_ms\":4}\n{\"ts\":\"2026-04-23T09:27:32.414Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id = ?\\\" params=[3329]\",\"request_id\":\"req_cd9a7e0db2fd\",\"duration_ms\":18}\n{\"ts\":\"2026-04-23T09:27:32.440Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id = ?\\\" params=[9722]\",\"request_id\":\"req_cd9a7e0db2fd\",\"duration_ms\":10}\n{\"ts\":\"2026-04-23T09:00:02.540Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-2\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id IN (?)\\\" rows=18\",\"request_id\":\"req_acce4ead144f\",\"duration_ms\":17}\n{\"ts\":\"2026-04-23T09:00:19.139Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-2\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id IN (?)\\\" rows=18\",\"request_id\":\"req_e69f6977e282\",\"duration_ms\":13}\n[('{\"ts\":\"2026-04-2', 3486)] [('{\"ts\":\"2026-04-2', 3486)]\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "bash",
+    "content": "{\n  \"command\": \"cd /mnt/session/uploads; python3 - <<'E'\\nimport json,collections\\nper=collections.Counter(); first=None; pre=0; ts=[]\\nfor l in open('app.log',errors='ignore'):\\n    if 'order_items WHERE order_id = ?' in l:\\n        d=json.loads(l); per[d['request_id']]+=1; ts.append(d['ts'])\\n    elif 'order_id IN' in l: pre+=1\\nimport statistics\\nprint(min(ts),max(ts),len(per),statistics.mean(per.values()),max(per.values()),'batch queries',pre)\\nE\\ngrep -E '\\\"level\\\":\\\"(ERROR|WARN)\\\"' app.log | cut -c1-220 | head -5\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "2026-04-23T09:27:32.390Z 2026-04-23T09:59:56.639Z 293 11.897610921501707 16 batch queries 115\n{\"ts\":\"2026-04-23T09:02:49.000Z\",\"level\":\"WARN\",\"service\":\"checkout\",\"host\":\"checkout-1\",\"msg\":\"GC pause 122ms (G1 young gen)\"}\n{\"ts\":\"2026-04-23T09:07:00.000Z\",\"level\":\"WARN\",\"service\":\"inventory\",\"host\":\"inventory-1\",\"msg\":\"GC pause 244ms (G1 young gen)\"}\n{\"ts\":\"2026-04-23T09:08:34.000Z\",\"level\":\"WARN\",\"service\":\"cart\",\"host\":\"cart-3\",\"msg\":\"GC pause 219ms (G1 young gen)\"}\n{\"ts\":\"2026-04-23T09:09:37.000Z\",\"level\":\"WARN\",\"service\":\"inventory\",\"host\":\"inventory-1\",\"msg\":\"GC pause 175ms (G1 young gen)\"}\n{\"ts\":\"2026-04-23T09:12:03.000Z\",\"level\":\"ERROR\",\"service\":\"auth\",\"host\":\"auth-3\",\"msg\":\"upstream identity-provider timeout after 5000ms\",\"request_id\":\"req_e835cf84d304\",\"upstream\":\"idp.internal\"}\n"
+  },
+  {
+    "role": "assistant",
+    "content": "**Evidence**\n- **Deploys:** The checkout deploy `7bd6579` (\"simplify order summary assembly\") went out at 09:27:31. The auth deploy at 08:52 and the cart deploy at 05:41 are too early to line up.\n- **Checkout p99:** It was steady at about 75 ms until 09:26. At 09:27 it jumped to 3.5 s, and by 09:50 it was about 5 s. The gap from deploy to spike is under a minute.\n- **Checkout error rate:** It was 0 until 09:35. It then rose to roughly 0.2\u20130.5 from 09:36, which fits timeouts building up behind the slow requests.\n- **Diff:** `CheckoutSummaryHandler.build_summary` used to run one `order_id IN (...)` query and group the items in memory. The new code runs `SELECT * FROM order_items WHERE order_id = ?` once for every open order, which is an N+1 pattern.\n- **Log:** From 09:27:32 on, there are 3,486 per-order queries across 293 requests, about 12 per request and up to 16. Before the deploy, the log shows only the batched `order_id IN (?)` form.\n- **Unrelated noise:** The GC pauses and the auth identity-provider timeout in the log are separate from this spike.\n\nI didn't check `db_pool_utilization`. The runbook only calls for it when no deploy lines up, and one did.\n\n**Suggested fix:** Revert `7bd6579`, or restore the batched query and keep the clearer loop for the summarising step.\n\n> **Root cause:** `7bd6579` \u2014 `build_summary` replaced the single batched `order_items` query with one query per open order, so each checkout summary now makes about 12 sequential DB round-trips and p99 went from about 75 ms to several seconds."
+  }
+]
