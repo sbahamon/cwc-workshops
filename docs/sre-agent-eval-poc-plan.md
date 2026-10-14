@@ -131,9 +131,9 @@ All nine workshops in `cwc-workshops` were reviewed for whether they could suppo
   5. If no deploy lines up, check DB pool utilization and upstream dependencies.
 
   It also lists five failure types that "have burned us": a per-row query replacing a batch, a removed cache decorator, a new query with no index, a blocking call in an async handler, and a retry loop with no backoff. And it fixes the output format: the reply ends with `**Root cause:** <sha> — one sentence on the mechanism`, with a component name in place of the commit when no deploy is at fault.
-- **`e2e.py`** runs the full path headlessly and passes if the transcript contains both "n+1" and `a3f9c21` anywhere. This grader is the first teaching moment, because it's both too lenient and too strict:
-  - **Too lenient.** `get_recent_deploys` returns every commit hash, so the right hash can show up just by recapping deploys. "N+1" can show up as one hypothesis among several. The agent doesn't have to actually *conclude* `a3f9c21` to pass.
-  - **Too strict.** A correct answer that says "per-row query" instead of "N+1" fails.
+- **`e2e.py`** runs the full path headlessly and passes if the transcript contains both "n+1" and `a3f9c21` anywhere. This grader is the first teaching moment:
+  - **Too strict, measured.** On the 289 recorded replies to deploy cases, the same check (each case's own sha) fails **40 correct answers**, every one of them describing the bug without the word "N+1", and passes **no wrong one** (`evals/checkpoint.py 2`).
+  - **Too lenient, in theory only.** `get_recent_deploys` returns every commit hash, so a reply that recaps the deploys and floats "N+1" as one hypothesis would pass even if it blamed another commit. A written fixture shows this; no recorded agent did it.
 - **The workshop no longer ran on the current SDK (found Oct 13).** `requirements.txt` only says `anthropic>=0.97.0`, and the current SDK (1.13.0) renamed `skills.create`'s `display_title` parameter to `display_name`. `e2e.py` and `agent_complete.py` crashed with a `TypeError`, and the hint in `agent.py` taught the old name. Fixed with a three-file rename, plus pinning `anthropic==1.13.0` so the next SDK release can't break the lab again.
 - **Smoke test after the fix:** `e2e.py` passed on Opus 4.8 in about 3 minutes, at $0.22 for the session. The agent followed the runbook in order (deploys, then metrics, then diff, then log search to confirm) and ended with the root-cause line inside a Markdown blockquote (`> **Root cause:** ...`). The new grader has to handle that.
 - **Model and prompt are duplicated.** The model is hardcoded to `claude-opus-4-8` in both `agent_complete.py` and `e2e.py`. `e2e.py` also keeps its own shorter copy of the system prompt and tool list instead of importing them from `provided.py`.
@@ -321,7 +321,7 @@ Each deliverable is mapped to the job requirements and to the LinkedIn post's se
 - prerequisites, and a one-command demo that runs in about 60 seconds
 - five checkpoints, each with an expected output to compare against:
   1. Write `grade_root_cause`; the grader unit tests go green.
-  2. Find and fix the `e2e.py` grader flaw: a transcript the old check passed now correctly fails.
+  2. Find and fix the `e2e.py` grader flaw: on the recorded replies the old check fails 40 correct answers and passes no wrong one; a written fixture shows the theoretical lenient case.
   3. Write `session_cost`; a pilot case prints its tokens and dollars.
   4. Swap the config to Haiku 5.5 at low effort; one case runs on it.
   5. Run the model ladder (or load the recorded results) and read the cost-reduction path chart (accuracy versus cost per incident).
@@ -382,7 +382,7 @@ Each deliverable is mapped to the job requirements and to the LinkedIn post's se
 
 **Contents:** a recorded delivery of one checkpoint, not a tour of the repo.
 
-- **Segment 1 (about 3 minutes):** the grader-validation moment. Show that the original `e2e.py` check can pass without the agent concluding the right commit, explain why that matters for anyone deciding which model to ship, and fix it live with the two new graders.
+- **Segment 1 (about 3 minutes):** the grader-validation moment. Lead with the measurement: on 289 real replies the original `e2e.py` check failed 40 correct answers and passed no wrong one. Mention the lenient case (it could pass without the agent concluding the right commit) as theoretical only. Explain why that matters for anyone deciding which model to ship, and fix it live with the two new graders.
 - **Segment 2 (about 2 minutes):** run the model ladder from pre-recorded results and read the cost-reduction path chart.
 - **Segment 3 (about 1 minute):** what changes when the learner points the runner at their own agent.
 

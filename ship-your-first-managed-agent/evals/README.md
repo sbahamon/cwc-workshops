@@ -124,8 +124,9 @@ audit of failing rows caught it, after results existed.
 ## Checkpoint 2: catch the old grader out
 
 The workshop's `e2e.py` passes when the transcript contains "n+1" and `a3f9c21`
-anywhere (`e2e.py:104-105`). Read those two lines and predict two things before you run
-this: a wrong answer that passes, and a right answer that fails.
+anywhere (`e2e.py:104-105`). It's the lab's only test, and it passed. Read those two lines,
+then predict: on 289 real replies from cheaper models, how many does it get wrong, and
+which way?
 
 ```bash
 uv run python checkpoint.py 2
@@ -138,25 +139,31 @@ Expected:
 Checkpoint 2: the e2e.py grader, next to yours
 e2e.py passes a reply when "n+1" and the sha appear anywhere in it (e2e.py:104-105).
 
-  reply                                        e2e.py  yours  right?
-  recaps every deploy, concludes 9f1e2d4       PASS    fail   no
-  correct, says "per-row query", not "N+1"     fail    PASS   yes
-
-The same two checks on all 289 recorded replies to deploy cases (7 cells in results/;
+Both checks on all 289 recorded replies to deploy cases (7 cells in results/;
 e2e.py's check is applied with each case's own sha):
-  both pass                        248
   e2e.py fails a correct answer     40
   e2e.py passes a wrong answer       0
+  both pass                        248
   both fail                          1
 For example ladder/v1, dc-cart rep 1, right but no "N+1":
   **Root cause:** `0c1986c` — `price_cart` now runs one `SELECT ... WHERE sku_id = ?` per cart line instead of a single batched `IN` query, so each request makes N sequential DB round trips and p99 rose about 50x.
-No recorded agent hit the lenient side; the first fixture shows how it would pass.
+
+In theory it can also pass a wrong answer. No recorded agent did; these are written fixtures:
+  reply                                        e2e.py  yours  right?
+  correct, says "per-row query", not "N+1"     fail    PASS   yes
+  recaps every deploy, concludes 9f1e2d4       PASS    fail   no
 ```
 
-It's too lenient on paper and too strict in practice. Neither failure shows up when the
-one test passes, and both matter as soon as you're comparing models: a cheaper model that
-writes "per-row query" would have been scored as wrong. The original lab stays as it
-shipped. The eval uses your grader instead.
+On real data the old check fails 40 correct answers and passes no wrong one. Its real
+flaw is strictness: all 40 name the right sha but describe the bug in other words, such
+as a per-row query, without ever writing "N+1". That never showed while one model ran
+one test. It matters as soon as you compare models: a cheaper model that phrases things
+differently looks worse than it is, and the cost decision gets made on a broken ruler.
+
+The lenient failure is real in principle. An agent that recaps every deploy and floats
+"N+1" as one hypothesis passes even when it blames the wrong commit. But only a written
+fixture shows it; no recorded agent did it. The original lab stays as it shipped. The
+eval uses your grader instead.
 
 ## Checkpoint 3: price a session
 

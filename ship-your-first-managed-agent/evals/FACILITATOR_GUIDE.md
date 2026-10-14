@@ -19,8 +19,9 @@ Do each of these on a fresh clone before you teach:
       blocks show. The tests check this too, but run it yourself so you've seen it.
 - [ ] You've written `grade_root_cause` yourself, without `lab_complete/`, and hit at least
       one fixture failure. Learners will hit the same ones (see "Where learners get stuck").
-- [ ] You can explain from memory both ways `e2e.py:104-105` is wrong, with an example of
-      each.
+- [ ] You can give the real-data finding on `e2e.py:104-105` from memory (it fails 40
+      correct answers out of 289 recorded deploy-case replies and passes no wrong one),
+      and say why the lenient case is only theoretical here.
 - [ ] You can say what the pre-registered floor is (root cause within 10 points of the
       baseline, `reg-verbatim` right every rep, format ≥ 95%), why it was fixed before any
       result, and the one way it's flawed (the baseline itself scores 92.9% on format).
@@ -73,22 +74,28 @@ as the worked example:
   finding below) changes what the agent sees. Every existing result would have measured
   a different test, so the ladder would have to be re-run.
 
-## Talk-track: the `e2e.py` grader moment (checkpoint 2)
+## Talk-track: the `e2e.py` grader moment (checkpoint 2, and video segment 1)
 
-1. **Before anyone runs it**, put `e2e.py:104-105` on screen:
-   `("n+1" in full or "n + 1" in full) and "a3f9c21" in full`. Ask: "Write me a wrong
-   answer that passes this, and a right answer that fails it." Give it a minute.
-2. **Too lenient.** `get_recent_deploys` returns every sha, so an agent that recaps the
-   deploys, floats "could be an N+1" as one hypothesis, and then blames the wrong commit
-   passes. The checkpoint's first row shows exactly that.
-3. **Too strict.** A correct answer that says "per-row query" fails. Then the reveal on
-   the real data: of the 289 recorded replies to deploy cases, the old check
-   fails **40 correct answers**, and it never passes a wrong one. In practice the old
-   check is too strict, not too lenient. The lenient side is real but rare.
-4. **Why it matters now.** With one model and one test, nobody notices. The moment you
+Lead with the measurement, not the hypothetical. The memorable fact is what the old check
+did to real replies.
+
+1. **Set it up.** Put `e2e.py:104-105` on screen:
+   `("n+1" in full or "n + 1" in full) and "a3f9c21" in full`. Say: "This was the lab's
+   only test, and it passed. We ran it on 289 real replies from the ladder. Guess how
+   many it got wrong, and which way." Take a few guesses; most rooms guess "too lenient".
+2. **The reveal.** It failed **40 correct answers** and passed **0 wrong ones**. All 40
+   name the right sha but describe the bug in other words, such as a per-row query,
+   without writing "N+1". Show the example line checkpoint 2 prints (`ladder/v1`,
+   `dc-cart` rep 1). On real data, the old check is too strict.
+3. **Why it matters now.** With one model and one test, nobody notices. The moment you
    compare models, a model that phrases things differently gets scored as wrong, and the
    cost decision is made on a broken ruler. "Validate the grader before you trust a
    result" is the habit.
+4. **The theoretical side, briefly.** The check could also pass a wrong answer:
+   `get_recent_deploys` returns every sha, so an agent that recaps the deploys, floats
+   "could be an N+1" as one hypothesis, and then blames the wrong commit would pass.
+   That's a written fixture, not something any recorded agent did. Say so plainly. Don't
+   present it as the headline.
 5. **Close.** The fix isn't a better regex over the whole transcript. It's a closed
    answer space: the runbook fixes a one-line output, and the grader reads only that line.
 
@@ -192,10 +199,12 @@ shipped; the rest came from building and running the eval.
      order_items …` query appears".
    - Fix in the eval: healthy requests log a batched `IN (?)` query, so the agent has to
      notice batched turning into per-row (`evals/generate.py`, `request()`).
-3. **The e2e grader is both too lenient and too strict.** It passes when "n+1" and
-   `a3f9c21` appear anywhere in the agent's text, even in a recap of deploys, and it fails
-   a correct "per-row query" answer (`e2e.py:104-105`). On the recorded runs it fails 40
-   correct answers (checkpoint 2).
+3. **The e2e grader fails correct answers.** It passes only when "n+1" and the sha
+   appear anywhere in the agent's text (`e2e.py:104-105`). On the 289 recorded replies to
+   deploy cases it fails **40 correct answers**, each one describing the bug without the
+   word "N+1", and passes **no wrong one** (checkpoint 2). In theory it's also too
+   lenient: a recap of every deploy that floats "N+1" and blames the wrong commit would
+   pass. But that's a written fixture, and no recorded agent did it.
 4. **`get_diff` matches by substring.** `args["commit"][:7] in diff` returns the diff for
    any 7-character fragment of it, for example `order_i` (`agent_complete.py`, `e2e.py`).
    Fix in the eval: an exact sha match against the deploy list (`evals/tools.py`).

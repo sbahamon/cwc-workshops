@@ -10,7 +10,7 @@ recorded runs in results/, so none of them needs an API key.
     uv run python checkpoint.py 4 --live          # one real session on your lab/cell.py (needs a key)
 
   1  grade_root_cause      lab/grading.py   fixtures from the grader-validation step
-  2  the e2e.py grader     (uses 1)         the old check next to yours, on fixtures and recorded replies
+  2  the e2e.py grader     (uses 1)         the old check next to yours, on recorded replies, then fixtures
   3  session_cost          lab/cost.py      price recorded sessions from their tokens
   4  the model swap        lab/cell.py      the recorded run of your cell; --live runs it (about 2¢)
   5  the path              (uses 1, 3)      every ladder cell and climb round, graded and priced by your code
@@ -146,12 +146,6 @@ def checkpoint_2(solution: bool) -> int:
     grading, where = lab("grading", solution)
     print("Checkpoint 2: the e2e.py grader, next to yours")
     print('e2e.py passes a reply when "n+1" and the sha appear anywhere in it (e2e.py:104-105).')
-    print()
-    print(f"  {'reply':44s} {'e2e.py':7s} {'yours':6s} right?")
-    for what, text, right in (("recaps every deploy, concludes 9f1e2d4", RECAP_WRONG, "no"),
-                              ('correct, says "per-row query", not "N+1"', PER_ROW_RIGHT, "yes")):
-        old, new = grade_legacy_e2e(text), call(grading.grade_root_cause, text, DEPLOY)
-        print(f"  {what:44s} {'PASS' if old else 'fail':7s} {'PASS' if new else 'fail':6s} {right}")
     keys = answers()
     counts = {(1, 1): 0, (0, 1): 0, (1, 0): 0, (0, 0): 0}
     example = None
@@ -168,17 +162,23 @@ def checkpoint_2(solution: bool) -> int:
                 example = (cell, row, find_root_cause_line(s["reply"]))
     n = sum(counts.values())
     print()
-    print(f"The same two checks on all {n} recorded replies to deploy cases ({len(cells)} cells in results/;")
+    print(f"Both checks on all {n} recorded replies to deploy cases ({len(cells)} cells in results/;")
     print("e2e.py's check is applied with each case's own sha):")
-    print(f"  both pass                       {counts[(1, 1)]:4d}")
     print(f"  e2e.py fails a correct answer   {counts[(0, 1)]:4d}")
     print(f"  e2e.py passes a wrong answer    {counts[(1, 0)]:4d}")
+    print(f"  both pass                       {counts[(1, 1)]:4d}")
     print(f"  both fail                       {counts[(0, 0)]:4d}")
     if example:
         cell, row, line = example
         print(f"For example {cell}, {row['prompt_id']} rep {row['rep']}, right but no \"N+1\":")
         print(f"  **Root cause:** {line}")
-    print("No recorded agent hit the lenient side; the first fixture shows how it would pass.")
+    print()
+    print("In theory it can also pass a wrong answer. No recorded agent did; these are written fixtures:")
+    print(f"  {'reply':44s} {'e2e.py':7s} {'yours':6s} right?")
+    for what, text, right in (('correct, says "per-row query", not "N+1"', PER_ROW_RIGHT, "yes"),
+                              ("recaps every deploy, concludes 9f1e2d4", RECAP_WRONG, "no")):
+        old, new = grade_legacy_e2e(text), call(grading.grade_root_cause, text, DEPLOY)
+        print(f"  {what:44s} {'PASS' if old else 'fail':7s} {'PASS' if new else 'fail':6s} {right}")
     return 0
 
 
