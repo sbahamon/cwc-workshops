@@ -164,7 +164,9 @@ class Attempt:
     latency_s: float | None = None
     sandbox_calls: int = 0
     custom_calls: int = 0
-    deploys_before_first_sandbox_call: bool | None = None
+    deploys_pulled: bool = False
+    log_accessed: bool = False
+    deploys_before_first_log_access: bool | None = None  # the runbook's step 1: deploys before the log
     session_usage_events: int = 0
     retries: int = 0
     error_class: str | None = None
@@ -192,15 +194,19 @@ def drive(events, send, tools: CaseTools, att: Attempt, cancelled: threading.Eve
                 att.turns.append({"role": "assistant", "content": txt})
         elif t == "agent.tool_use":
             att.sandbox_calls += 1
-            if att.deploys_before_first_sandbox_call is None:
-                att.deploys_before_first_sandbox_call = False
+            # Reading the runbook skill is following it, not opening the log: only a sandbox
+            # call that touches the uploaded log counts.
+            args = json.dumps(ev.input)
+            if not att.log_accessed and ("app.log" in args or "/mnt/session" in args):
+                att.log_accessed = True
+                att.deploys_before_first_log_access = att.deploys_pulled
             att.turns.append({"role": "tool_call", "name": ev.name, "content": json.dumps(ev.input, indent=2)})
         elif t == "agent.tool_result":
             att.turns.append({"role": "tool_result", "name": "sandbox", "content": text_of(ev.content)})
         elif t == "agent.custom_tool_use":
             att.custom_calls += 1
-            if ev.name == "get_recent_deploys" and att.deploys_before_first_sandbox_call is None:
-                att.deploys_before_first_sandbox_call = True
+            if ev.name == "get_recent_deploys":
+                att.deploys_pulled = True
             result = tools.handle(ev.name, dict(ev.input or {}))
             att.turns.append({"role": "tool_call", "name": ev.name, "content": json.dumps(ev.input, indent=2)})
             att.turns.append({"role": "tool_result", "name": ev.name, "content": result})
@@ -219,6 +225,8 @@ def drive(events, send, tools: CaseTools, att: Attempt, cancelled: threading.Eve
             if reason == "requires_action":
                 continue  # waiting on a tool result we have sent or are sending
             att.stop_reason = reason
+            if att.deploys_before_first_log_access is None:  # never opened the log
+                att.deploys_before_first_log_access = att.deploys_pulled
             if reason == "budget_reached":
                 att.error_class = "budget"
             elif reason != "end_turn":
@@ -230,6 +238,25 @@ def drive(events, send, tools: CaseTools, att: Attempt, cancelled: threading.Eve
             return
     if not cancelled.is_set() and att.stop_reason is None:
         att.error_class, att.error = "harness_error", "event stream ended before the turn did"
+
+
+def run_with_ceiling(target, timeout_s: float, on_timeout, grace_s: float = 30.0) -> bool:
+    """Run `target` on a daemon thread under a hard wall-clock ceiling. True if it finished.
+
+    At the ceiling, call `on_timeout()` (which should end the turn, e.g. send
+    user.interrupt) and wait `grace_s` more; a thread still stuck after that is
+    abandoned (daemon threads don't block exit). Never close the stream from another
+    thread instead: in the 2026-10-14 pilot, Stream.close() from a timer thread
+    returned but didn't unblock the reader's in-progress ssl.read(), and the run hung.
+    """
+    th = threading.Thread(target=target, daemon=True)
+    th.start()
+    th.join(timeout_s)
+    if not th.is_alive():
+        return True
+    on_timeout()
+    th.join(grace_s)
+    return not th.is_alive()
 
 
 # ── backends ────────────────────────────────────────────────────────────
@@ -345,27 +372,28 @@ class LiveBackend:
                 metadata={"case": case.id, "rep": str(rep), "variant": meta["variant"], "flow": meta["flow"]}), att)
             att.session_id = session.id
             t0 = time.monotonic()
-            with c.beta.sessions.events.stream(session.id) as stream:
-                def on_timeout():
-                    cancelled.set()
-                    att.error_class, att.error = "timeout", f"wall-clock ceiling {timeout_s:.0f}s"
-                    try:
-                        c.beta.sessions.events.send(session.id, events=[{"type": "user.interrupt"}])
-                    finally:
-                        stream.close()
-                watchdog = threading.Timer(timeout_s, on_timeout)
-                watchdog.daemon = True
-                watchdog.start()
+
+            def read():  # owns the stream for its whole life: opened, read and closed on this thread
                 try:
-                    with_retries(lambda: c.beta.sessions.events.send(session.id, events=[
-                        {"type": "user.message", "content": [{"type": "text", "text": case.prompt}]}]), att)
-                    drive(stream, lambda evs: with_retries(lambda: c.beta.sessions.events.send(session.id, events=evs), att),
-                          tools, att, cancelled)
-                except Exception as e:  # stream closed by the watchdog, or a transport failure
+                    with c.beta.sessions.events.stream(session.id) as stream:  # stream first, then send
+                        with_retries(lambda: c.beta.sessions.events.send(session.id, events=[
+                            {"type": "user.message", "content": [{"type": "text", "text": case.prompt}]}]), att)
+                        drive(stream, lambda evs: with_retries(
+                            lambda: c.beta.sessions.events.send(session.id, events=evs), att), tools, att, cancelled)
+                except Exception as e:
                     if not cancelled.is_set():
                         att.error_class, att.error = "harness_error", f"{type(e).__name__}: {e}"[:500]
-                finally:
-                    watchdog.cancel()
+
+            def on_timeout():
+                cancelled.set()
+                att.error_class, att.error = "timeout", f"wall-clock ceiling {timeout_s:.0f}s"
+                try:  # makes the session go idle, which wakes the reader
+                    c.beta.sessions.events.send(session.id, events=[{"type": "user.interrupt"}])
+                except Exception as e:
+                    att.error += f" | interrupt failed: {type(e).__name__}"
+
+            if not run_with_ceiling(read, timeout_s, on_timeout):
+                att.error = (att.error or "") + " | reader still blocked after the grace period; abandoned"
             att.latency_s = round(time.monotonic() - t0, 2)
         except anthropic.APIStatusError as e:
             att.error_class, att.error = "serving_error", f"{e.status_code}: {e.message}"[:500]
@@ -476,7 +504,7 @@ def record(w: Writer, case: Case, rep: int, cfg: AgentCfg, att: Attempt, meta: d
            "tool_calls": att.sandbox_calls + att.custom_calls,
            "out_tokens": att.usage["output_tokens"],
            "meta": {**base_meta, "sandbox_calls": att.sandbox_calls, "custom_calls": att.custom_calls,
-                    "deploys_before_first_sandbox_call": att.deploys_before_first_sandbox_call,
+                    "deploys_before_first_log_access": att.deploys_before_first_log_access,
                     "session_usage_events": att.session_usage_events}}
     if not (att.usage["output_tokens"] > 0 and row["latency_s"] and att.list_cost_usd is not None):
         raise RuntimeError(f"{case.id} rep{rep}: scorable row is missing usage, latency or cost: {common}")

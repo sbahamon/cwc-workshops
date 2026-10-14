@@ -45,7 +45,7 @@ def test_oracle_scores_everything(tmp_path, cases_dir):
         assert r["model"] == "claude-opus-4-8" and r["usage"]["output_tokens"] > 0
         assert r["latency_s"] > 0 and r["tool_calls"] == 2 and r["status"] == "ok"
         assert r["tags"][0] in {"regression", "shifted", "no_culprit", "decoy"}
-        assert r["meta"]["deploys_before_first_sandbox_call"] is True and r["meta"]["fake"] is True
+        assert r["meta"]["deploys_before_first_log_access"] is True and r["meta"]["fake"] is True
     trace = json.loads((tmp_path / f"flow/baseline/traces/{FEW[0]}_rep0.json").read_text())
     assert [t["role"] for t in trace] == ["system", "user", "tool_call", "tool_result", "tool_call",
                                           "tool_result", "assistant"]
@@ -143,3 +143,64 @@ def test_flows_without_state_use_the_ladder_gate(tmp_path, cases_dir, monkeypatc
     monkeypatch.setattr(run, "LiveBackend", lambda *_: pytest.fail("ran past an unapproved gate"))
     assert go(tmp_path / "pilot", cases_dir, reps="1") == 2          # a live pilot is gated
     assert go(tmp_path / "pilot2", cases_dir, "--fake", "oracle", reps="1") == 0  # offline fakes are not
+
+
+def test_ceiling_survives_a_read_that_close_cannot_unblock():
+    """The live failure from the 2026-10-14 pilot: a reader stuck in a socket read that
+    another thread can't interrupt. The ceiling must still return, as a timeout."""
+    import threading, time
+    stuck = threading.Event()  # never set: stands in for ssl.read() that close() can't wake
+    t0 = time.monotonic()
+    fired = []
+    finished = run.run_with_ceiling(lambda: stuck.wait(), timeout_s=0.2, on_timeout=lambda: fired.append(1), grace_s=0.2)
+    assert finished is False and fired == [1] and time.monotonic() - t0 < 2
+
+
+def test_ceiling_lets_the_interrupt_finish_the_turn():
+    """The normal timeout path: on_timeout sends user.interrupt, the server goes idle, the
+    reader sees it and exits by itself within the grace period."""
+    import threading
+    idle = threading.Event()
+    finished = run.run_with_ceiling(lambda: idle.wait(), timeout_s=0.1, on_timeout=idle.set, grace_s=2)
+    assert finished is True
+
+
+def test_ceiling_is_silent_when_the_turn_finishes_in_time():
+    fired = []
+    assert run.run_with_ceiling(lambda: None, timeout_s=5, on_timeout=lambda: fired.append(1)) is True
+    assert fired == []
+
+
+def _seq(cases_dir, *calls):
+    """Drive a scripted list of ('sandbox'|'custom', name, input) calls; return the Attempt."""
+    from types import SimpleNamespace as ns
+    import threading
+    from tools import CaseTools
+    evs = []
+    for i, (kind, name, inp) in enumerate(calls):
+        evs.append(ns(type="agent.tool_use" if kind == "sandbox" else "agent.custom_tool_use",
+                      id=f"t{i}", name=name, input=inp))
+    evs.append(ns(type="session.status_idle", stop_reason=ns(type="end_turn")))
+    att = run.Attempt()
+    run.drive(iter(evs), lambda e: None, CaseTools(cases_dir / "reg-500s"), att, threading.Event())
+    return att
+
+
+def test_reading_the_runbook_is_not_opening_the_log(cases_dir):
+    # What every pilot agent did: read SKILL.md, then pull deploys, then grep the log.
+    att = _seq(cases_dir, ("sandbox", "read", {"file_path": "/workspace/skills/incident-triage-runbook/SKILL.md"}),
+               ("custom", "get_recent_deploys", {}),
+               ("sandbox", "bash", {"command": "grep -c deploy_complete /mnt/session/uploads/app.log"}))
+    assert att.deploys_before_first_log_access is True
+
+
+def test_log_first_is_flagged(cases_dir):
+    att = _seq(cases_dir, ("sandbox", "bash", {"command": "head /mnt/session/uploads/app.log"}),
+               ("custom", "get_recent_deploys", {}))
+    assert att.deploys_before_first_log_access is False
+
+
+def test_never_touching_the_log_counts_as_deploys_first_only_if_deploys_were_pulled(cases_dir):
+    assert _seq(cases_dir, ("custom", "get_recent_deploys", {})).deploys_before_first_log_access is True
+    assert _seq(cases_dir, ("custom", "get_metrics", {"service": "checkout", "metric": "p99_latency_ms"})
+                ).deploys_before_first_log_access is False
