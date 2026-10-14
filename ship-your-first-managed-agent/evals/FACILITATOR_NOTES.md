@@ -1,6 +1,6 @@
 # Facilitator notes (working draft)
 
-Running notes for the facilitator guide (D6). Phase 9 folds them into `FACILITATOR_GUIDE.md`.
+Running notes for the facilitator guide (D6). Folded into [`FACILITATOR_GUIDE.md`](FACILITATOR_GUIDE.md) in Phase 9; the guide is the version to teach from.
 Built on Gagan Bhat's original workshop, *Ship your first managed agent* (Apache-2.0).
 
 ## Running the eval

@@ -3,6 +3,8 @@
 
 # cwc-workshops
 
+> **New lab:** [*Your SRE agent works. Now make it cheap.*](./ship-your-first-managed-agent/evals/README.md) — evals, a model × effort walk and one prompt hillclimb for the SRE agent; runs on recorded results with no API key.
+
 Workshop materials. Not maintained and not accepting contributions.
 
 Materials from Anthropic-run **Code with Claude** workshops.
