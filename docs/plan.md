@@ -392,3 +392,7 @@ Two concurrent `run.py` processes race on the shared `.registry.tmp` (Session lo
   - Checkpoint 2 on real data: the old e2e check fails 40 of 289 recorded deploy-case replies that are correct, and passes no wrong one.
   - Not done in this session: D8 (the one-pager, which must also carry the Findings), the D7 video, the final SOURCES.md pass, and the rehearsal.
   - Untouched: `config.py` (still the shipped prompt), `hillclimb/`, and every harness file (ladder and climb harness sha still `c808e86bdb6d`).
+- 2026-10-14 (no API spend):
+  - D8 drafted at `docs/ONE_PAGER.md`. It covers the build and the choice of workshop, the seven criteria with evidence (rehearsal marked as not yet done), results, findings, what didn't work, and what's next.
+  - The old e2e grader is now described by its real-data result everywhere it appears: checkpoint 2's output, the lab README, the facilitator talk-track (video segment 1), Findings item 3 above, and the PoC plan. On 289 recorded deploy-case replies it fails 40 correct answers (none writes "N+1") and passes no wrong one. The lenient case is presented as theoretical (a written fixture).
+  - §B row 1 and BUILD_BRIEF.md are left as the original records.
