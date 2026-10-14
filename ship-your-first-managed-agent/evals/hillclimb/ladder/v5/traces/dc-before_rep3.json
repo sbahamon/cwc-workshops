@@ -1,0 +1,102 @@
+[
+  {
+    "role": "system",
+    "content": "You are the SRE Agent \u2014 an SRE/data-analyst agent embedded in an incident\ndashboard. The application log is mounted at /mnt/session/uploads/app.log (large; use\ngrep/python to analyze it, don't read it whole). You have local tools that\nquery the same data the dashboard shows. Correlate evidence and state findings\nplainly and concisely.\n\nFinish with the runbook's root-cause line, written once, as the last line of\nthe answer:\n**Root cause:** `<sha or component>` \u2014 <mechanism>.\nThe text after the label is exactly one sentence: what changed and how that\nproduces the symptom. Anything that would be a second sentence (downstream\nimpact, the fix or rollback, confidence, open questions) goes on its own line\nabove the root-cause line, never after the label.\n"
+  },
+  {
+    "role": "user",
+    "content": "checkout p99 spiked ~14:23 UTC. Find the root cause."
+  },
+  {
+    "role": "tool_call",
+    "name": "read",
+    "content": "{\n  \"file_path\": \"/workspace/skills/incident-triage-runbook/SKILL.md\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "1\t---\n2\tname: incident-triage-runbook\n3\tdescription: The SRE team's runbook for triaging production latency and error-rate incidents. Use this whenever investigating an incident, a latency spike, elevated error rates, or when asked \"what caused X\" about a production service.\n4\t---\n5\t\n6\t# Incident triage\n7\t\n8\tIf you change the order below, say why in #sre.\n9\t\n10\t## Order of operations\n11\t\n12\t1. Pull deploys for the last 6h. Don't open the log first.\n13\t2. Line the deploy timestamps up against `p99_latency_ms` / `error_rate` for the paged service. State the gap (\"deploy 14:31, p99 moves 14:33\").\n14\t3. If a deploy lines up: pull the diff, read it. Check for the stuff in the next section.\n15\t4. Then grep the log to confirm. Don't grep to fish.\n16\t5. No deploy lines up \u2192 check `db_pool_utilization` across checkout/cart/auth/inventory, then upstream deps.\n17\t\n18\t## Things that have burned us\n19\t\n20\tIn rough order of how often:\n21\t\n22\t- per-row query where there used to be a batch\n23\t- cache decorator removed \"temporarily\"\n24\t- new query, no index\n25\t- blocking call in an async handler\n26\t- retry loop with no backoff\n27\t\n28\t## Write-up\n29\t\n30\tOne line at the bottom:\n31\t\n32\t> **Root cause:** `<sha>` \u2014 one sentence on the mechanism.\n33\t\n34\tIf it wasn't a deploy, put the component or upstream dep where the sha goes (`db-primary`, `stripe-api`, whatever). Still one sentence.\n35\t\n36\tEverything above that line is evidence. Keep it short; the long version goes in the postmortem doc.\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_recent_deploys",
+    "content": "{}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_recent_deploys",
+    "content": "[\n  {\n    \"ts\": \"2026-04-22T11:58:40Z\",\n    \"service\": \"auth\",\n    \"commit\": \"67f6130\",\n    \"author\": \"bob@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"add rate limiting to /refresh\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:21:05Z\",\n    \"service\": \"cart\",\n    \"commit\": \"50293ce\",\n    \"author\": \"erin@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"add exponential backoff to pricing client\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:22:30Z\",\n    \"service\": \"checkout\",\n    \"commit\": \"6db1b9b\",\n    \"author\": \"alice@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"refactor order summary builder for readability\"\n  }\n]\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_metrics",
+    "content": "{\n  \"metric\": \"p99_latency_ms\",\n  \"service\": \"checkout\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_metrics",
+    "content": "[{\"ts\": \"2026-04-22T14:00:00Z\", \"value\": 74.0}, {\"ts\": \"2026-04-22T14:01:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:02:00Z\", \"value\": 73.0}, {\"ts\": \"2026-04-22T14:03:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:04:00Z\", \"value\": 67.0}, {\"ts\": \"2026-04-22T14:05:00Z\", \"value\": 71.0}, {\"ts\": \"2026-04-22T14:06:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:07:00Z\", \"value\": 72.0}, {\"ts\": \"2026-04-22T14:08:00Z\", \"value\": 73.0}, {\"ts\": \"2026-04-22T14:09:00Z\", \"value\": 73.0}, {\"ts\": \"2026-04-22T14:10:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:11:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:12:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:13:00Z\", \"value\": 66.0}, {\"ts\": \"2026-04-22T14:14:00Z\", \"value\": 73.0}, {\"ts\": \"2026-04-22T14:15:00Z\", \"value\": 52.0}, {\"ts\": \"2026-04-22T14:16:00Z\", \"value\": 66.0}, {\"ts\": \"2026-04-22T14:17:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:18:00Z\", \"value\": 62.0}, {\"ts\": \"2026-04-22T14:19:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:20:00Z\", \"value\": 71.0}, {\"ts\": \"2026-04-22T14:21:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:22:00Z\", \"value\": 3404.0}, {\"ts\": \"2026-04-22T14:23:00Z\", \"value\": 3191.0}, {\"ts\": \"2026-04-22T14:24:00Z\", \"value\": 4038.0}, {\"ts\": \"2026-04-22T14:25:00Z\", \"value\": 4140.0}, {\"ts\": \"2026-04-22T14:26:00Z\", \"value\": 4179.0}, {\"ts\": \"2026-04-22T14:27:00Z\", \"value\": 2687.0}, {\"ts\": \"2026-04-22T14:28:00Z\", \"value\": 4141.0}, {\"ts\": \"2026-04-22T14:29:00Z\", \"value\": 3831.0}, {\"ts\": \"2026-04-22T14:30:00Z\", \"value\": 3485.0}, {\"ts\": \"2026-04-22T14:31:00Z\", \"value\": 4357.0}, {\"ts\": \"2026-04-22T14:32:00Z\", \"value\": 4501.0}, {\"ts\": \"2026-04-22T14:33:00Z\", \"value\": 4119.0}, {\"ts\": \"2026-04-22T14:34:00Z\", \"value\": 4539.0}, {\"ts\": \"2026-04-22T14:35:00Z\", \"value\": 4575.0}, {\"ts\": \"2026-04-22T14:36:00Z\", \"value\": 4103.0}, {\"ts\": \"2026-04-22T14:37:00Z\", \"value\": 4562.0}, {\"ts\": \"2026-04-22T14:38:00Z\", \"value\": 4699.0}, {\"ts\": \"2026-04-22T14:39:00Z\", \"value\": 4046.0}, {\"ts\": \"2026-04-22T14:40:00Z\", \"value\": 4342.0}, {\"ts\": \"2026-04-22T14:41:00Z\", \"value\": 4687.0}, {\"ts\": \"2026-04-22T14:42:00Z\", \"value\": 4884.0}, {\"ts\": \"2026-04-22T14:43:00Z\", \"value\": 3652.0}, {\"ts\": \"2026-04-22T14:44:00Z\", \"value\": 4560.0}, {\"ts\": \"2026-04-22T14:45:00Z\", \"value\": 3984.0}, {\"ts\": \"2026-04-22T14:46:00Z\", \"value\": 4856.0}, {\"ts\": \"2026-04-22T14:47:00Z\", \"value\": 4562.0}, {\"ts\": \"2026-04-22T14:48:00Z\", \"value\": 5274.0}, {\"ts\": \"2026-04-22T14:49:00Z\", \"value\": 5135.0}, {\"ts\": \"2026-04-22T14:50:00Z\", \"value\": 5405.0}, {\"ts\": \"2026-04-22T14:51:00Z\", \"value\": 5332.0}, {\"ts\": \"2026-04-22T14:52:00Z\", \"value\": 5492.0}, {\"ts\": \"2026-04-22T14:53:00Z\", \"value\": 4889.0}, {\"ts\": \"2026-04-22T14:54:00Z\", \"value\": 5350.0}, {\"ts\": \"2026-04-22T14:55:00Z\", \"value\": 5460.0}, {\"ts\": \"2026-04-22T14:56:00Z\", \"value\": 5687.0}, {\"ts\": \"2026-04-22T14:57:00Z\", \"value\": 5336.0}, {\"ts\": \"2026-04-22T14:58:00Z\", \"value\": 5510.0}, {\"ts\": \"2026-04-22T14:59:00Z\", \"value\": 5854.0}]"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_metrics",
+    "content": "{\n  \"metric\": \"error_rate\",\n  \"service\": \"checkout\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_metrics",
+    "content": "[{\"ts\": \"2026-04-22T14:00:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:01:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:02:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:03:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:04:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:05:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:06:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:07:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:08:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:09:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:10:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:11:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:12:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:13:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:14:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:15:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:16:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:17:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:18:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:19:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:20:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:21:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:22:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:23:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:24:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:25:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:26:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:27:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:28:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:29:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:30:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:31:00Z\", \"value\": 0.2222}, {\"ts\": \"2026-04-22T14:32:00Z\", \"value\": 0.6}, {\"ts\": \"2026-04-22T14:33:00Z\", \"value\": 0.5}, {\"ts\": \"2026-04-22T14:34:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:35:00Z\", \"value\": 0.7778}, {\"ts\": \"2026-04-22T14:36:00Z\", \"value\": 0.2222}, {\"ts\": \"2026-04-22T14:37:00Z\", \"value\": 0.5}, {\"ts\": \"2026-04-22T14:38:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:39:00Z\", \"value\": 0.4286}, {\"ts\": \"2026-04-22T14:40:00Z\", \"value\": 0.3333}, {\"ts\": \"2026-04-22T14:41:00Z\", \"value\": 0.3077}, {\"ts\": \"2026-04-22T14:42:00Z\", \"value\": 0.4}, {\"ts\": \"2026-04-22T14:43:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:44:00Z\", \"value\": 0.25}, {\"ts\": \"2026-04-22T14:45:00Z\", \"value\": 0.1111}, {\"ts\": \"2026-04-22T14:46:00Z\", \"value\": 0.4286}, {\"ts\": \"2026-04-22T14:47:00Z\", \"value\": 0.5}, {\"ts\": \"2026-04-22T14:48:00Z\", \"value\": 0.4286}, {\"ts\": \"2026-04-22T14:49:00Z\", \"value\": 0.5}, {\"ts\": \"2026-04-22T14:50:00Z\", \"value\": 0.3636}, {\"ts\": \"2026-04-22T14:51:00Z\", \"value\": 0.5}, {\"ts\": \"2026-04-22T14:52:00Z\", \"value\": 0.3333}, {\"ts\": \"2026-04-22T14:53:00Z\", \"value\": 0.4286}, {\"ts\": \"2026-04-22T14:54:00Z\", \"value\": 0.125}, {\"ts\": \"2026-04-22T14:55:00Z\", \"value\": 0.1111}, {\"ts\": \"2026-04-22T14:56:00Z\", \"value\": 0.2857}, {\"ts\": \"2026-04-22T14:57:00Z\", \"value\": 0.3333}, {\"ts\": \"2026-04-22T14:58:00Z\", \"value\": 0.4444}, {\"ts\": \"2026-04-22T14:59:00Z\", \"value\": 0.3}]"
+  },
+  {
+    "role": "assistant",
+    "content": "The checkout deploy `6db1b9b` landed at 14:22:30, and p99 jumps at 14:22. The cart deploy at 14:21:05 is also close, so I'll check both diffs."
+  },
+  {
+    "role": "tool_call",
+    "name": "get_diff",
+    "content": "{\n  \"commit\": \"6db1b9b\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_diff",
+    "content": "commit 6db1b9b0d196d6bde8108d0528253bb970c9f1d3\nAuthor: Alice <alice@shop.io>\nDate:   Wed Apr 22 14:20:03 2026 +0000\n\n    refactor order summary builder for readability\n\n    The old list comprehension was getting hard to follow. Split it into\n    an explicit loop so the per-row enrichment logic is clearer.\n\ndiff --git a/checkout/handlers.py b/checkout/handlers.py\nindex 8f3a2b1..c4d9e7f 100644\n--- a/checkout/handlers.py\n+++ b/checkout/handlers.py\n@@ -41,22 +41,24 @@ class CheckoutSummaryHandler(BaseHandler):\n     def build_summary(self, user_id: str) -> dict:\n         rows = Order.objects.filter(user_id=user_id, status=\"open\")\n-        ids = [r.order_id for r in rows]\n-\n-        # Single query, then group in memory\n-        all_items = OrderItem.objects.filter(order_id__in=ids)\n-        by_id = defaultdict(list)\n-        for item in all_items:\n-            by_id[item.order_id].append(item)\n-\n-        summaries = [\n-            self._summarize(r, by_id[r.order_id])\n-            for r in rows\n-        ]\n+\n+        summaries = []\n+        for order in rows:\n+            # fetch the items for this row\n+            items = OrderItem.objects.filter(order_id=order.order_id)\n+            log.debug(\n+                'db_query sql=\"SELECT * FROM order_items WHERE order_id = ?\" params=[%s]',\n+                order.order_id,\n+            )\n+            summaries.append(self._summarize(order, list(items)))\n+\n         return {\n             \"user_id\": user_id,\n             \"rows\": summaries,\n             \"total_cents\": sum(s[\"subtotal_cents\"] for s in summaries),\n         }\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_diff",
+    "content": "{\n  \"commit\": \"50293ce\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_diff",
+    "content": "commit 50293cecde1fdd8e6e58ea01ab0d0a00c0d96335\nAuthor: Erin <erin@shop.io>\nDate:   Wed Apr 22 14:18:38 2026 +0000\n\n    add exponential backoff to pricing client\n\n    Adds exponential backoff with jitter to the client retry loop.\n\ndiff --git a/cart/client.py b/cart/client.py\nindex 7d8e9f0..1a2b3c4 100644\n--- a/cart/client.py\n+++ b/cart/client.py\n@@ -15,6 +15,7 @@ def call_with_retry(fn, attempts=3):\n     for i in range(attempts):\n         try:\n             return fn()\n         except TransientError:\n-            continue\n+            time.sleep(min(2 ** i, 8) * random.uniform(0.5, 1.0))\n+            continue\n     raise RetriesExhausted()\n"
+  },
+  {
+    "role": "assistant",
+    "content": "The checkout diff replaces a single batched `order_items` query with a per-order query inside a loop, which is the first pattern on the runbook's list. I'll confirm that in the log."
+  },
+  {
+    "role": "tool_call",
+    "name": "bash",
+    "content": "{\n  \"command\": \"cd /mnt/session/uploads; wc -l app.log; grep -c 'order_items' app.log; grep 'order_items' app.log | head -3; echo ---; grep 'order_items' app.log | awk '{print substr($0,1,20)}' | sort | uniq -c | head -40\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "8682 app.log\n3876\n{\"ts\":\"2026-04-22T14:00:26.678Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-1\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id IN (?)\\\" rows=6\",\"request_id\":\"req_c8dae49c9cf7\",\"duration_ms\":17}\n{\"ts\":\"2026-04-22T14:00:59.261Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-2\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id IN (?)\\\" rows=7\",\"request_id\":\"req_1fa23bf03434\",\"duration_ms\":20}\n{\"ts\":\"2026-04-22T14:01:10.674Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id IN (?)\\\" rows=14\",\"request_id\":\"req_1ba4d1edd914\",\"duration_ms\":6}\n---\n   3876 {\"ts\":\"2026-04-22T14\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "bash",
+    "content": "{\n  \"command\": \"cd /mnt/session/uploads; python3 - <<'E'\\nimport json,collections\\nc=collections.Counter(); d=collections.defaultdict(list)\\nfor l in open('app.log'):\\n    try: j=json.loads(l)\\n    except: continue\\n    m=j.get('msg','')\\n    if 'order_items' in m:\\n        k='batch IN' if ' IN (' in m else 'per-row =' \\n        minute=j['ts'][:16]\\n        c[(minute,k)]+=1\\n        if 'duration_ms' in j: d[minute].append(j['duration_ms'])\\nfor (m,k),n in sorted(c.items()):\\n    if m>='2026-04-22T14:15': print(m,k,n)\\nprint('pre-14:20 per-row count:', sum(n for (m,k),n in c.items() if k=='per-row =' and m<'2026-04-22T14:22'))\\nE\\ngrep -m3 'order_items WHERE order_id = ' app.log | cut -c1-300\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "2026-04-22T14:15 batch IN 4\n2026-04-22T14:16 batch IN 3\n2026-04-22T14:17 batch IN 2\n2026-04-22T14:18 batch IN 5\n2026-04-22T14:19 batch IN 4\n2026-04-22T14:20 batch IN 3\n2026-04-22T14:21 batch IN 1\n2026-04-22T14:22 batch IN 2\n2026-04-22T14:22 per-row = 73\n2026-04-22T14:23 per-row = 138\n2026-04-22T14:24 per-row = 80\n2026-04-22T14:25 per-row = 132\n2026-04-22T14:26 per-row = 113\n2026-04-22T14:27 per-row = 86\n2026-04-22T14:28 per-row = 76\n2026-04-22T14:29 per-row = 98\n2026-04-22T14:30 per-row = 66\n2026-04-22T14:31 per-row = 107\n2026-04-22T14:32 per-row = 122\n2026-04-22T14:33 per-row = 98\n2026-04-22T14:34 per-row = 79\n2026-04-22T14:35 per-row = 107\n2026-04-22T14:36 per-row = 95\n2026-04-22T14:37 per-row = 106\n2026-04-22T14:38 per-row = 95\n2026-04-22T14:39 per-row = 85\n2026-04-22T14:40 per-row = 67\n2026-04-22T14:41 per-row = 170\n2026-04-22T14:42 per-row = 125\n2026-04-22T14:43 per-row = 39\n2026-04-22T14:44 per-row = 98\n2026-04-22T14:45 per-row = 105\n2026-04-22T14:46 per-row = 73\n2026-04-22T14:47 per-row = 108\n2026-04-22T14:48 per-row = 86\n2026-04-22T14:49 per-row = 91\n2026-04-22T14:50 per-row = 130\n2026-04-22T14:51 per-row = 69\n2026-04-22T14:52 per-row = 134\n2026-04-22T14:53 per-row = 87\n2026-04-22T14:54 per-row = 96\n2026-04-22T14:55 per-row = 112\n2026-04-22T14:56 per-row = 74\n2026-04-22T14:57 per-row = 116\n2026-04-22T14:58 per-row = 120\n2026-04-22T14:59 per-row = 131\npre-14:20 per-row count: 0\n{\"ts\":\"2026-04-22T14:22:31.103Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id = ?\\\" params=[1070]\",\"request_id\":\"req_5b5ffdb97cc9\",\"duration_ms\":18}\n{\"ts\":\"2026-04-22T14:22:31.122Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id = ?\\\" params=[3117]\",\"request_id\":\"req_5b5ffdb97cc9\",\"duration_ms\":8}\n{\"ts\":\"2026-04-22T14:22:31.142Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-3\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id = ?\\\" params=[7006]\",\"request_id\":\"req_5b5ffdb97cc9\",\"duration_ms\":2}\n"
+  },
+  {
+    "role": "assistant",
+    "content": "**Finding: the checkout deploy `6db1b9b` introduced an N+1 query pattern that drives the p99 spike.**\n\n**Deploy vs. metric timeline (UTC, 2026-04-22)**\n- 14:21:05: cart deploy `50293ce` (exponential backoff in the pricing client).\n- 14:22:30: checkout deploy `6db1b9b` (order summary refactor).\n- 14:22: checkout p99 goes from about 78 ms to 3,404 ms. Log shows the first per-row query at 14:22:31, so the gap is about 1 minute.\n- 14:31: `error_rate` first goes non-zero (0.22%). It rises to roughly 0.3\u20130.5% and stays there. This lags the latency change by about 9 minutes.\n\n**Diff (`6db1b9b`)**\n- The old code ran one batched query: `SELECT * FROM order_items WHERE order_id IN (...)`, grouped in memory.\n- The new code runs `OrderItem.objects.filter(order_id=order.order_id)` inside a loop, so each open order costs one DB round trip.\n- Latency scales with the number of open orders per request, which explains the step change rather than a gradual climb.\n\n**Log confirmation**\n- Before 14:22, every `order_items` query is the batched `IN (...)` form. There are 0 per-row queries before 14:22.\n- From 14:22 on, per-row `order_items WHERE order_id = ?` queries run at roughly 40\u2013170 per minute, all from the `checkout` service.\n\n**Cart deploy ruled out as the cause**\n- `50293ce` only adds sleep-with-jitter to a retry loop in cart's pricing client. It doesn't touch checkout's query path, and checkout latency is already elevated by the 14:22 deploy.\n- Its backoff could add latency to cart calls, but nothing in the checkout p99 series points to it.\n\n**Open questions**\n- The error-rate rise at 14:31 is not explained by the logs I pulled. It could be timeouts under DB load, but I haven't verified that. I haven't checked `db_pool_utilization`, since the deploy lined up and the runbook's shortcut applies only when no deploy does.\n\n**Recommended action:** roll back checkout to the pre-`6db1b9b` build, or restore the batched query, then confirm p99 returns to about 80 ms.\n\n**Root cause:** `6db1b9b` \u2014 the refactor replaced the single batched `order_items` query with one query per open order inside a loop, so each checkout request now issues N+1 DB round trips and p99 jumps to about 3.4 s."
+  }
+]

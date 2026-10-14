@@ -1,18 +1,23 @@
-# Ladder: summary (updated evening 2026-10-14)
+# Ladder: summary (updated evening 2026-10-14, after the Haiku confirmation run)
 
-**Current result.** The cheapest cell that clears the pre-registered floor is **Sonnet 5.5 at low effort with the climbed system prompt** (`hillclimb/climb/v1`): root cause 100% on train+test (68/68), format 97.6% (82/84), `reg-verbatim` right on all 4 reps, at **3.41¢ per incident at the rate card (3.33¢ list) versus 24.02¢ (24.07¢) for Opus 4.8 at default effort: 7.0× cheaper**. One prompt change did it: the root-cause line is one sentence, written once, last. The walk then stepped down to **Haiku 5.5 low with the climbed prompt (v5): it fails the floor** (root cause 88.2%, format 92.9%; both within noise). Three of Haiku's four root-cause misses name the right answer but drop the bold `**Root cause:**` label, so the grader can't find the line; it would still fail on format with a lenient label rule. C0.4 would give a within-noise fail one more run (about 75¢ list); not run, per Steffany's instruction to stop after the Haiku result.
+**Current result.** Two cells clear the pre-registered floor below the Opus 4.8 baseline, both with the climbed system prompt (one change: the root-cause line is one sentence, written once, last):
 
-| cell | model, effort, prompt | root cause train+test | format | reg-verbatim | ¢/incident rate card (list) | floor |
-|---|---|---|---|---|---|---|
-| baseline | Opus 4.8, default (xhigh), shipped | 100% (34/34) | 92.9% | [1, 1] | 24.02 (24.07) | reference |
-| v1 | Sonnet 5.5, low, shipped | 100% | 61.9% | [1, 1] | 3.75 (3.74) | fail |
-| v2 | Opus 4.8, low, shipped (diagnostic) | 100% | 100% | [1] | 13.65 (13.71) | off path |
-| v3 | Sonnet 5.5, medium, shipped | 100% | 69.0% | [1, 1] | 3.89 (3.81) | fail |
-| v4 | Sonnet 5.5, high, shipped | 100% | 52.4% | [1, 1] | 6.52 (6.55) | fail |
-| climb/v1 | Sonnet 5.5, low, **climbed** (4 reps) | 100% (68/68) | **97.6%** | [1, 1, 1, 1] | **3.41 (3.33)** | **pass: incumbent** |
-| v5 | Haiku 5.5, low, climbed | 88.2% (30/34) | 92.9% | [1, 1] | 0.42 (1.79) | fail (within noise) |
+- **Haiku 5.5 low (v5), the cheapest cell that passes: 0.42¢ per incident at the rate card (1.79¢ list) versus 24.02¢ (24.07¢), 57× cheaper at the rate card (13× on list cost).** It passes narrowly, after the pre-registered confirmation run: root cause 63/68 = 92.6% (needs ≥ 90.0%), format 80/84 = 95.24% (needs ≥ 95%, so exactly one row of margin), `reg-verbatim` 4/4. Both are still within noise. Every miss is on held-out test cases (root cause 27/32 on test). Four of its five root-cause misses name the right answer but drop the bold `**Root cause:**` label; the fifth blames an innocent deploy on a no-culprit case. Its first two reps failed (30/34, 39/42); reps 3–4 scored 33/34 and 41/42.
+- **Sonnet 5.5 low (climb/v1), the cheapest cell that passes with margin: 3.41¢ (3.33¢), 7.0× cheaper.** Root cause 68/68 (test 32/32), format 82/84 = 97.6%, `reg-verbatim` 4/4.
 
-Spend: **$23.53 list / $22.95 rate card** of the $50 cap. Chart: `results/path.svg`; ledger: `COST_LEDGER.md`; climb: `hillclimb/climb/narrative.md`.
+Haiku is the bottom of the grid, so the walk ends here. Adopting Haiku over climbed Sonnet, or trying Haiku medium first, is Steffany's call.
+
+| cell | model, effort, prompt | root cause train+test | test root cause | format | reg-verbatim | ¢/incident rate card (list) | floor |
+|---|---|---|---|---|---|---|---|
+| baseline | Opus 4.8, default (xhigh), shipped | 100% (34/34) | 16/16 | 92.9% | [1, 1] | 24.02 (24.07) | reference |
+| v1 | Sonnet 5.5, low, shipped | 100% | 16/16 | 61.9% | [1, 1] | 3.75 (3.74) | fail |
+| v2 | Opus 4.8, low, shipped (diagnostic) | 100% | 8/8 | 100% | [1] | 13.65 (13.71) | off path |
+| v3 | Sonnet 5.5, medium, shipped | 100% | 16/16 | 69.0% | [1, 1] | 3.89 (3.81) | fail |
+| v4 | Sonnet 5.5, high, shipped | 100% | 16/16 | 52.4% | [1, 1] | 6.52 (6.55) | fail |
+| climb/v1 | Sonnet 5.5, low, **climbed** (4 reps) | 100% (68/68) | 32/32 | **97.6%** | [1, 1, 1, 1] | **3.41 (3.33)** | **pass, with margin** |
+| v5 | Haiku 5.5, low, **climbed** (4 reps) | 92.6% (63/68) | 27/32 | 95.2% | [1, 1, 1, 1] | **0.42 (1.79)** | **pass, narrowly (within noise)** |
+
+Spend: **$24.28 list / $23.12 rate card** of the $50 cap. Chart: `results/path.svg`; ledger: `COST_LEDGER.md`; climb: `hillclimb/climb/narrative.md`.
 
 ---
 

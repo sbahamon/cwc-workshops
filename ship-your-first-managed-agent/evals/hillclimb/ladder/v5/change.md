@@ -23,3 +23,19 @@ Verdict (walk.py, 2026-10-14; 42 rows, 0 errors): **FAIL** on two checks, both w
 - Output tokens 2,830/session (climbed Sonnet low: about 1,180); latency 24.8 s; 8.4 tool calls.
 Walk: C0.4 gives a within-noise fail one more run (42 sessions, about 75¢ list) before the walk
 moves. Not run: Steffany's instruction was to stop after this result. Incumbent: climb/v1.
+
+Confirmation run (C0.4, Steffany authorized 2026-10-14): reps 3-4, 42 sessions, 0 errors.
+Reps 3-4 alone: root cause 33/34 train+test, format 41/42 (one miss: nc-db-2 rep 3, a dropped
+bold label). **All 84 rows: PASS.**
+- root_cause (train+test): 63/68 = 92.6% ± 6.2% vs >= 90.0%: pass (still within noise; two more
+  misses would fail). By split: train 36/36, **test 27/32 (84.4%)**, val 16/16.
+- format: 80/84 = 95.24% ± 4.6% vs >= 95%: pass by exactly one row (one more miss = 94.0%).
+- reg-verbatim [1, 1, 1, 1]: pass.
+- 4 of the 5 root-cause misses are the dropped bold label on a correct answer (no bold
+  root-cause line in 4/68 train+test rows); a lenient-label shadow grade gives 66/68. The fifth
+  (nc-db-2 rep 0) blames an innocent deploy on a no-culprit case.
+- Cost: 1.79¢ list / 0.42¢ rate card per incident; 2,789 output tokens/session (climbed Sonnet
+  low: about 1,180); 24.5 s; 8.5 tool calls.
+Walk: Haiku 5.5 low is the bottom of the grid, so the walk ends here with v5 as the cheapest cell
+that passes the pre-registered floor. Steffany decides whether to adopt it or try Haiku medium;
+climbed Sonnet 5.5 low (climb/v1) is the cheapest cell that passes with margin.

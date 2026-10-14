@@ -1,0 +1,92 @@
+[
+  {
+    "role": "system",
+    "content": "You are the SRE Agent \u2014 an SRE/data-analyst agent embedded in an incident\ndashboard. The application log is mounted at /mnt/session/uploads/app.log (large; use\ngrep/python to analyze it, don't read it whole). You have local tools that\nquery the same data the dashboard shows. Correlate evidence and state findings\nplainly and concisely.\n\nFinish with the runbook's root-cause line, written once, as the last line of\nthe answer:\n**Root cause:** `<sha or component>` \u2014 <mechanism>.\nThe text after the label is exactly one sentence: what changed and how that\nproduces the symptom. Anything that would be a second sentence (downstream\nimpact, the fix or rollback, confidence, open questions) goes on its own line\nabove the root-cause line, never after the label.\n"
+  },
+  {
+    "role": "user",
+    "content": "checkout p99 spiked ~14:47 UTC. Find the root cause."
+  },
+  {
+    "role": "tool_call",
+    "name": "read",
+    "content": "{\n  \"file_path\": \"/workspace/skills/incident-triage-runbook/SKILL.md\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "1\t---\n2\tname: incident-triage-runbook\n3\tdescription: The SRE team's runbook for triaging production latency and error-rate incidents. Use this whenever investigating an incident, a latency spike, elevated error rates, or when asked \"what caused X\" about a production service.\n4\t---\n5\t\n6\t# Incident triage\n7\t\n8\tIf you change the order below, say why in #sre.\n9\t\n10\t## Order of operations\n11\t\n12\t1. Pull deploys for the last 6h. Don't open the log first.\n13\t2. Line the deploy timestamps up against `p99_latency_ms` / `error_rate` for the paged service. State the gap (\"deploy 14:31, p99 moves 14:33\").\n14\t3. If a deploy lines up: pull the diff, read it. Check for the stuff in the next section.\n15\t4. Then grep the log to confirm. Don't grep to fish.\n16\t5. No deploy lines up \u2192 check `db_pool_utilization` across checkout/cart/auth/inventory, then upstream deps.\n17\t\n18\t## Things that have burned us\n19\t\n20\tIn rough order of how often:\n21\t\n22\t- per-row query where there used to be a batch\n23\t- cache decorator removed \"temporarily\"\n24\t- new query, no index\n25\t- blocking call in an async handler\n26\t- retry loop with no backoff\n27\t\n28\t## Write-up\n29\t\n30\tOne line at the bottom:\n31\t\n32\t> **Root cause:** `<sha>` \u2014 one sentence on the mechanism.\n33\t\n34\tIf it wasn't a deploy, put the component or upstream dep where the sha goes (`db-primary`, `stripe-api`, whatever). Still one sentence.\n35\t\n36\tEverything above that line is evidence. Keep it short; the long version goes in the postmortem doc.\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_recent_deploys",
+    "content": "{}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_recent_deploys",
+    "content": "[\n  {\n    \"ts\": \"2026-04-22T12:20:51Z\",\n    \"service\": \"inventory\",\n    \"commit\": \"239b495\",\n    \"author\": \"carol@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"add SKU validation on reserve endpoint\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:18:37Z\",\n    \"service\": \"cart\",\n    \"commit\": \"4963c6e\",\n    \"author\": \"erin@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"structured request logging\"\n  },\n  {\n    \"ts\": \"2026-04-22T14:46:05Z\",\n    \"service\": \"checkout\",\n    \"commit\": \"ccf7a0f\",\n    \"author\": \"frank@shop.io\",\n    \"status\": \"success\",\n    \"summary\": \"refactor order summary builder for readability\"\n  }\n]\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_metrics",
+    "content": "{\n  \"metric\": \"p99_latency_ms\",\n  \"service\": \"checkout\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_metrics",
+    "content": "[{\"ts\": \"2026-04-22T14:00:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:01:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:02:00Z\", \"value\": 66.0}, {\"ts\": \"2026-04-22T14:03:00Z\", \"value\": 73.0}, {\"ts\": \"2026-04-22T14:04:00Z\", \"value\": 49.0}, {\"ts\": \"2026-04-22T14:05:00Z\", \"value\": 48.0}, {\"ts\": \"2026-04-22T14:06:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:07:00Z\", \"value\": 67.0}, {\"ts\": \"2026-04-22T14:08:00Z\", \"value\": 70.0}, {\"ts\": \"2026-04-22T14:09:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:10:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:11:00Z\", \"value\": 72.0}, {\"ts\": \"2026-04-22T14:12:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:13:00Z\", \"value\": 64.0}, {\"ts\": \"2026-04-22T14:14:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:15:00Z\", \"value\": 74.0}, {\"ts\": \"2026-04-22T14:16:00Z\", \"value\": 68.0}, {\"ts\": \"2026-04-22T14:17:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:18:00Z\", \"value\": 66.0}, {\"ts\": \"2026-04-22T14:19:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:20:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:21:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:22:00Z\", \"value\": 74.0}, {\"ts\": \"2026-04-22T14:23:00Z\", \"value\": 68.0}, {\"ts\": \"2026-04-22T14:24:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:25:00Z\", \"value\": 75.0}, {\"ts\": \"2026-04-22T14:26:00Z\", \"value\": 74.0}, {\"ts\": \"2026-04-22T14:27:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:28:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:29:00Z\", \"value\": 73.0}, {\"ts\": \"2026-04-22T14:30:00Z\", \"value\": 67.0}, {\"ts\": \"2026-04-22T14:31:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:32:00Z\", \"value\": 44.0}, {\"ts\": \"2026-04-22T14:33:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:34:00Z\", \"value\": 72.0}, {\"ts\": \"2026-04-22T14:35:00Z\", \"value\": 79.0}, {\"ts\": \"2026-04-22T14:36:00Z\", \"value\": 73.0}, {\"ts\": \"2026-04-22T14:37:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:38:00Z\", \"value\": 77.0}, {\"ts\": \"2026-04-22T14:39:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:40:00Z\", \"value\": 76.0}, {\"ts\": \"2026-04-22T14:41:00Z\", \"value\": 78.0}, {\"ts\": \"2026-04-22T14:42:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:43:00Z\", \"value\": 80.0}, {\"ts\": \"2026-04-22T14:44:00Z\", \"value\": 70.0}, {\"ts\": \"2026-04-22T14:45:00Z\", \"value\": 70.0}, {\"ts\": \"2026-04-22T14:46:00Z\", \"value\": 3006.0}, {\"ts\": \"2026-04-22T14:47:00Z\", \"value\": 3420.0}, {\"ts\": \"2026-04-22T14:48:00Z\", \"value\": 3501.0}, {\"ts\": \"2026-04-22T14:49:00Z\", \"value\": 4023.0}, {\"ts\": \"2026-04-22T14:50:00Z\", \"value\": 4050.0}, {\"ts\": \"2026-04-22T14:51:00Z\", \"value\": 3973.0}, {\"ts\": \"2026-04-22T14:52:00Z\", \"value\": 3174.0}, {\"ts\": \"2026-04-22T14:53:00Z\", \"value\": 4325.0}, {\"ts\": \"2026-04-22T14:54:00Z\", \"value\": 4143.0}, {\"ts\": \"2026-04-22T14:55:00Z\", \"value\": 4140.0}, {\"ts\": \"2026-04-22T14:56:00Z\", \"value\": 4040.0}, {\"ts\": \"2026-04-22T14:57:00Z\", \"value\": 4346.0}, {\"ts\": \"2026-04-22T14:58:00Z\", \"value\": 4328.0}, {\"ts\": \"2026-04-22T14:59:00Z\", \"value\": 3676.0}]"
+  },
+  {
+    "role": "tool_call",
+    "name": "get_metrics",
+    "content": "{\n  \"metric\": \"error_rate\",\n  \"service\": \"checkout\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_metrics",
+    "content": "[{\"ts\": \"2026-04-22T14:00:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:01:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:02:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:03:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:04:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:05:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:06:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:07:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:08:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:09:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:10:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:11:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:12:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:13:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:14:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:15:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:16:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:17:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:18:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:19:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:20:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:21:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:22:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:23:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:24:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:25:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:26:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:27:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:28:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:29:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:30:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:31:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:32:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:33:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:34:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:35:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:36:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:37:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:38:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:39:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:40:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:41:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:42:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:43:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:44:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:45:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:46:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:47:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:48:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:49:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:50:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:51:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:52:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:53:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:54:00Z\", \"value\": 0.0}, {\"ts\": \"2026-04-22T14:55:00Z\", \"value\": 0.3333}, {\"ts\": \"2026-04-22T14:56:00Z\", \"value\": 0.3333}, {\"ts\": \"2026-04-22T14:57:00Z\", \"value\": 0.25}, {\"ts\": \"2026-04-22T14:58:00Z\", \"value\": 0.3}, {\"ts\": \"2026-04-22T14:59:00Z\", \"value\": 0.3}]"
+  },
+  {
+    "role": "assistant",
+    "content": "The checkout deploy `ccf7a0f` landed at 14:46:05, and p99 jumps from 70 ms to 3006 ms in the 14:46 bucket. Pulling the diff now."
+  },
+  {
+    "role": "tool_call",
+    "name": "get_diff",
+    "content": "{\n  \"commit\": \"ccf7a0f\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "get_diff",
+    "content": "commit ccf7a0ffbb641190e3d23cf53bb47e1494cce3e6\nAuthor: Frank <frank@shop.io>\nDate:   Wed Apr 22 14:43:38 2026 +0000\n\n    refactor order summary builder for readability\n\n    The old list comprehension was getting hard to follow. Split it into\n    an explicit loop so the per-row enrichment logic is clearer.\n\ndiff --git a/checkout/handlers.py b/checkout/handlers.py\nindex 8f3a2b1..c4d9e7f 100644\n--- a/checkout/handlers.py\n+++ b/checkout/handlers.py\n@@ -41,22 +41,24 @@ class CheckoutSummaryHandler(BaseHandler):\n     def build_summary(self, user_id: str) -> dict:\n         rows = Order.objects.filter(user_id=user_id, status=\"open\")\n-        ids = [r.order_id for r in rows]\n-\n-        # Single query, then group in memory\n-        all_items = OrderItem.objects.filter(order_id__in=ids)\n-        by_id = defaultdict(list)\n-        for item in all_items:\n-            by_id[item.order_id].append(item)\n-\n-        summaries = [\n-            self._summarize(r, by_id[r.order_id])\n-            for r in rows\n-        ]\n+\n+        summaries = []\n+        for order in rows:\n+            # fetch the items for this row\n+            items = OrderItem.objects.filter(order_id=order.order_id)\n+            log.debug(\n+                'db_query sql=\"SELECT * FROM order_items WHERE order_id = ?\" params=[%s]',\n+                order.order_id,\n+            )\n+            summaries.append(self._summarize(order, list(items)))\n+\n         return {\n             \"user_id\": user_id,\n             \"rows\": summaries,\n             \"total_cents\": sum(s[\"subtotal_cents\"] for s in summaries),\n         }\n"
+  },
+  {
+    "role": "assistant",
+    "content": "The diff replaces a batched `order_id__in` query with one query per open order, which is the N+1 pattern from the runbook. Next I'll confirm it in the log."
+  },
+  {
+    "role": "tool_call",
+    "name": "bash",
+    "content": "{\n  \"command\": \"cd /mnt/session/uploads; ls -la; wc -l app.log; grep -c \\\"order_items\\\" app.log; grep \\\"order_items\\\" app.log | head -3; grep -E \\\"ccf7a0f|order_items\\\" app.log | awk '{print substr($0,1,20)}' | sort | uniq -c | sort -rn | head -5\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "total 1288\ndrwxr-xr-x 1 claude ubuntu       0 Oct 14 12:02 .\ndrwxr-xr-x 4 root   root      4096 Oct 14 12:02 ..\n-rw-r--r-- 1 claude ubuntu 1313618 Oct 14 12:02 app.log\n6370 app.log\n1756\n{\"ts\":\"2026-04-22T14:00:23.469Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-1\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id IN (?)\\\" rows=8\",\"request_id\":\"req_2e6f0eff14af\",\"duration_ms\":6}\n{\"ts\":\"2026-04-22T14:00:49.787Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-1\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id IN (?)\\\" rows=8\",\"request_id\":\"req_aeda92c522e9\",\"duration_ms\":9}\n{\"ts\":\"2026-04-22T14:01:02.482Z\",\"level\":\"DEBUG\",\"service\":\"checkout\",\"host\":\"checkout-2\",\"msg\":\"db_query sql=\\\"SELECT * FROM order_items WHERE order_id IN (?)\\\" rows=2\",\"request_id\":\"req_bec9ebdbb0de\",\"duration_ms\":3}\n   1757 {\"ts\":\"2026-04-22T14\n"
+  },
+  {
+    "role": "tool_call",
+    "name": "bash",
+    "content": "{\n  \"command\": \"cd /mnt/session/uploads; python3 - <<'EOF'\\nimport json,collections\\nc=collections.Counter(); per=collections.defaultdict(int); first={}\\nfor line in open('app.log'):\\n    try: d=json.loads(line)\\n    except: continue\\n    m=d.get('msg','')\\n    if 'order_items' in m:\\n        kind='IN-batch' if 'IN (' in m else 'per-row =' if 'order_id = ?' in m else 'other'\\n        minute=d['ts'][:16]\\n        c[(minute,kind)]+=1\\n        first.setdefault(kind,d['ts'])\\nfor k in sorted(c):\\n    if k[0]>='2026-04-22T14:40': print(k,c[k])\\nprint('first per-row:',first.get('per-row ='), 'first IN:',first.get('IN-batch'))\\nEOF\\ngrep -E '\\\"level\\\":\\\"(ERROR|WARN)\\\"' app.log | grep checkout | awk -F'\\\"ts\\\":\\\"' '{print substr($2,1,16)}' | sort | uniq -c | tail -8\"\n}"
+  },
+  {
+    "role": "tool_result",
+    "name": "sandbox",
+    "content": "('2026-04-22T14:40', 'IN-batch') 7\n('2026-04-22T14:41', 'IN-batch') 7\n('2026-04-22T14:42', 'IN-batch') 4\n('2026-04-22T14:43', 'IN-batch') 2\n('2026-04-22T14:44', 'IN-batch') 3\n('2026-04-22T14:45', 'IN-batch') 6\n('2026-04-22T14:46', 'per-row =') 118\n('2026-04-22T14:47', 'per-row =') 136\n('2026-04-22T14:48', 'per-row =') 126\n('2026-04-22T14:49', 'per-row =') 162\n('2026-04-22T14:50', 'per-row =') 88\n('2026-04-22T14:51', 'per-row =') 138\n('2026-04-22T14:52', 'per-row =') 38\n('2026-04-22T14:53', 'per-row =') 107\n('2026-04-22T14:54', 'per-row =') 91\n('2026-04-22T14:55', 'per-row =') 105\n('2026-04-22T14:56', 'per-row =') 105\n('2026-04-22T14:57', 'per-row =') 99\n('2026-04-22T14:58', 'per-row =') 127\n('2026-04-22T14:59', 'per-row =') 115\nfirst per-row: 2026-04-22T14:46:08.337Z first IN: 2026-04-22T14:00:23.469Z\n      1 2026-04-22T14:54\n     11 2026-04-22T14:55\n      9 2026-04-22T14:56\n      7 2026-04-22T14:57\n     10 2026-04-22T14:58\n      9 2026-04-22T14:59\n"
+  },
+  {
+    "role": "assistant",
+    "content": "The checkout p99 spike is caused by deploy `ccf7a0f`, which turned a single batched `order_items` query into one query per open order.\n\n**Timeline (UTC, 2026-04-22)**\n- **14:46:05**: checkout deploy `ccf7a0f` (frank, \"refactor order summary builder for readability\").\n- **14:46**: checkout p99 goes from 70 ms to 3006 ms. It stays between 3.2 s and 4.3 s through 14:59.\n- **14:46:08**: first per-row `order_items` query in the log. Before 14:46 there are only `IN (...)` batch queries (for example 14:00:23, 8 rows, 6 ms).\n- **14:55**: error rate goes from 0% to roughly 0.25\u20130.33%, and checkout ERROR/WARN lines start to appear around the same time.\n- Per-minute per-row query volume after the deploy is about 40\u2013160 per minute. The minute counts are rough, since I counted log lines and did not isolate one request.\n- Other recent deploys don't line up: inventory at 12:20 and cart at 14:18, both well before the spike.\n\n**Diff**\nThe old code ran one `OrderItem.objects.filter(order_id__in=ids)` and grouped in memory. The new code runs `OrderItem.objects.filter(order_id=order.order_id)` inside a loop over the open orders. The commit also adds a `log.debug` line on each iteration. Latency therefore scales with the number of open orders per user, and each lookup adds a DB round trip.\n\n**Confidence:** High on the mechanism. The p99 step, deploy timing, and query-pattern change all line up. I did not check the DB-side metrics (`db_pool_utilization`), because the deploy correlation was already conclusive, so I can't say how much of the latency is pool contention versus round-trip cost. The error-rate increase starting at 14:55 is small and I haven't tied it to a specific cause.\n\n**Fix:** Roll back checkout to the commit before `ccf7a0f`, or restore the batched `order_id__in` query and in-memory grouping. The rollback is the faster option for mitigation.\n\n**Root cause:** `ccf7a0f` \u2014 the readability refactor replaced the batched `order_items` query with one query per open order, so checkout's latency grows with each order and p99 jumped to about 3\u20134 s after the 14:46 deploy."
+  }
+]

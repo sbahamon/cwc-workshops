@@ -145,15 +145,16 @@
       "effort": "low",
       "role": "walk",
       "prompt": "climbed prompt r1",
-      "verdict": "fail (root_cause 88.2% < 90.0%; format 92.9% < 95%; both within noise)",
-      "adopted": false,
-      "why": "climbed Sonnet 5.5 low passed the floor at 3.33\u00a2 -> step down to Haiku 5.5 low (projected under the incumbent)"
+      "verdict": "pass after the C0.4 confirmation run (84 rows: root_cause 63/68 = 92.6%, format 80/84 = 95.2%, reg-verbatim 4/4; both still within noise, margins of 2 and 0 rows)",
+      "adopted": true,
+      "why": "climbed Sonnet 5.5 low passed the floor at 3.33\u00a2 -> step down to Haiku 5.5 low (projected under the incumbent)",
+      "first_two_reps": "fail (root_cause 30/34, format 39/42; within noise)"
     }
   ],
   "harness_sha": "c808e86bdb6d04f19d7590b2862192c74c4fae6ff66e530940f33ab33e9f15f3",
   "walk_status": {
     "stopped": "2026-10-14",
-    "incumbent": "climb/v1 (Sonnet 5.5 low + climbed prompt r1)",
-    "reason": "Haiku 5.5 low with the climbed prompt fails the floor (root_cause 30/34, format 39/42); C0.4's within-noise rule would give it one more run, which Steffany did not authorize in this session (her call); Steffany's instruction was to stop after the Haiku result"
+    "incumbent": "v5 (Haiku 5.5 low + climbed prompt r1)",
+    "reason": "Haiku 5.5 low is the cheapest cell in the grid and passes the floor on all 84 rows after the pre-registered confirmation run; nothing cheaper to step down to. Margins are thin (format exactly one row above 95%) and all misses are on test (root_cause 27/32 on test vs 32/32 for climbed Sonnet low). Steffany decides whether to adopt it or look at Haiku medium."
   }
 }

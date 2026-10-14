@@ -56,7 +56,8 @@ def label(entry: dict, c: dict) -> str:
     if entry.get("prompt"):
         eff = f"{eff} effort, {entry['prompt']}"
         why = entry.get("verdict", "").split("(")[-1].split(";")[0].rstrip(")")
-        tag = "kept" if entry.get("adopted") else ("fails floor: " + why if why else "not kept")
+        kept = "passes floor" if entry.get("role") == "walk" else "kept"  # walk cells: adoption is Steffany's call
+        tag = kept if entry.get("adopted") else ("fails floor: " + why if why else "not kept")
         return f"{model}, {eff} — {tag}\n{line2}"
     tag = {"baseline": "baseline", "diagnostic": "round-0 diagnostic (off path)"}.get(role)
     if tag is None:
