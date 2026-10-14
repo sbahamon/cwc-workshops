@@ -17,3 +17,8 @@ above). No sha, service, time or punctuation workaround. De-fluff pass: nothing 
 sentence is operational). Expected root_cause effect: none; the identifier keeps its position.
 
 Diff: change.patch. Snapshot: system.md.
+
+Result (4 reps, 84 rows; 0 errors): format 82/84 = 97.6% ± 3.3% (reps 1-2: 40/42; confirmation
+reps 3-4: 42/42); root cause 68/68 train+test; reg-verbatim [1, 1, 1, 1]; val root cause 16/16.
+Misses: shift-morning rep 0, reg-1440 rep 1. **PASS** the C0.3 floor, outside noise after the
+confirmation. **Kept.** 3.33¢ list / 3.41¢ rate card per incident (ladder baseline 24.07¢ / 24.02¢).

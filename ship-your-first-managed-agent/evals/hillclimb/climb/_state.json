@@ -126,20 +126,23 @@
     {
       "variant": "v1",
       "change": "system.md: one-sentence root-cause line, written once, last; everything else on its own line above",
-      "format_all": "40/42 (95.2% \u00b1 6.4%)",
-      "format_train": "17/18",
-      "format_test": "16/16",
-      "format_val": "7/8",
-      "root_cause_train_test": "34/34",
+      "format_all": "82/84 (97.6% \u00b1 3.3%) after the confirmation run (reps 3-4: 42/42)",
+      "format_train": "35/36",
+      "format_test": "32/32",
+      "format_val": "15/16",
+      "root_cause_train_test": "68/68",
       "reg_verbatim": [
+        1,
+        1,
         1,
         1
       ],
-      "val_root_cause": "8/8 (climb baseline 8/8)",
-      "verdict": "passes the C0.3 floor, within noise of it (95% sits inside format's CI); per C0.4 a within-noise pass gets one more run before the walk moves",
-      "kept": "pending the confirmation run"
+      "val_root_cause": "16/16 (climb baseline 8/8)",
+      "verdict": "PASS the C0.3 floor; after 4 reps no longer within noise (95% is below the format CI)",
+      "kept": "kept (2026-10-14): passes the floor at 3.33\u00a2 list / 3.41\u00a2 rate card per incident"
     }
   ],
   "harness_sha": "c808e86bdb6d04f19d7590b2862192c74c4fae6ff66e530940f33ab33e9f15f3",
-  "round": 1
+  "round": 1,
+  "best": "v1"
 }

@@ -53,6 +53,9 @@ def label(entry: dict, c: dict) -> str:
     line2 = (f"{c['root_cause_tt']:.1%} at {cents(c[X])}"
              f" ({cents(c['list_per_incident'])} list_cost) · format {c['format']:.0%}")
     role = entry.get("role")
+    if entry.get("prompt"):
+        eff = f"{eff} effort, {entry['prompt']}"
+        return f"{model}, {eff} — {'kept' if entry.get('adopted') else 'not kept'}\n{line2}"
     tag = {"baseline": "baseline", "diagnostic": "round-0 diagnostic (off path)"}.get(role)
     if tag is None:
         tag = "kept" if entry.get("adopted") else "fails floor: " + entry.get("verdict", "").split("(")[-1].split(";")[0].rstrip(")")
@@ -60,9 +63,26 @@ def label(entry: dict, c: dict) -> str:
 
 
 def points(flow: Path = LADDER) -> list[tuple[dict, dict]]:
+    """Ladder walk cells and climb rounds, in path order: the ladder walk up to the climb's
+    target, then each climb round (prompt "climbed prompt rN"), then walk cells run with a
+    climbed prompt (walk entries carrying "prompt")."""
     state = json.loads((flow / "_state.json").read_text())
     out = []
-    for entry in state.get("walk", []):
+    walk = state.get("walk", [])
+    for entry in [e for e in walk if not e.get("prompt")]:
+        c = cell(entry["variant"], flow)
+        if c["rows"]:
+            out.append((entry, c))
+    climb = flow.parent / "climb"
+    if (climb / "_state.json").exists():
+        cst = json.loads((climb / "_state.json").read_text())
+        for i, r in enumerate(cst.get("rounds", []), start=1):
+            c = cell(r["variant"], climb)
+            if c["rows"]:
+                e = {"variant": r["variant"], "model": cst["target"]["model"], "effort": cst["target"]["effort"],
+                     "prompt": f"climbed prompt r{i}", "adopted": str(r.get("kept", "")).startswith("kept")}
+                out.append((e, c))
+    for entry in [e for e in walk if e.get("prompt")]:
         c = cell(entry["variant"], flow)
         if c["rows"]:
             out.append((entry, c))
