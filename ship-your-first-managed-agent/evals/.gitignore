@@ -2,3 +2,5 @@
 cases/
 # Workspace-specific resource IDs written by run.py.
 .registry.json
+# Your own runs from `checkpoint.py 4 --live` (spend.py still counts them).
+lab_runs/

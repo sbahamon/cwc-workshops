@@ -1,0 +1,4 @@
+{
+  "label": "claude-sonnet-5-5 low (climb baseline)",
+  "description": "model=claude-sonnet-5-5, effort=low, prompts/system.md unchanged; 42 rows copied from hillclimb/ladder/v1 (regraded)"
+}

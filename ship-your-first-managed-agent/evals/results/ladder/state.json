@@ -1,0 +1,162 @@
+{
+  "reps": 2,
+  "goal": {
+    "target": "list_cost_usd",
+    "direction": "lower",
+    "hold": [
+      "root_cause",
+      "format"
+    ]
+  },
+  "approve_each_round": true,
+  "floor": {
+    "note": "pre-registered 2026-10-13 (docs/plan.md C0.3), before any ladder result; reg-verbatim clause clarified 2026-10-14 (root_cause only), before any ladder result",
+    "root_cause_train_test_within_points_of_baseline": 10,
+    "format_min": 0.95,
+    "reg_verbatim_root_cause_correct_every_rep": true,
+    "format_rule": "format >= format_min over the cell's rows; reg-verbatim's format is not a separate requirement"
+  },
+  "train_ids": [
+    "shift-early",
+    "shift-late",
+    "shift-morning",
+    "rb-cache",
+    "rb-early-n1",
+    "rb-wrong-rollback",
+    "im-naming",
+    "im-docs",
+    "im-chore"
+  ],
+  "test_ids": [
+    "dc-before",
+    "dc-after",
+    "dc-cart",
+    "dc-cart-late",
+    "nc-db-1",
+    "nc-db-2",
+    "nc-stripe-1",
+    "nc-stripe-2"
+  ],
+  "val_ids": [
+    "reg-verbatim",
+    "reg-500s",
+    "reg-1440",
+    "reg-auth"
+  ],
+  "harness_paths": [
+    "graders.py",
+    "tools.py",
+    "cases.py",
+    "generate.py",
+    "specs.py",
+    "scenario.py",
+    "diffs.py",
+    "spend.py",
+    "pricing.py",
+    "../config.py",
+    "../incident-triage-runbook/SKILL.md"
+  ],
+  "metrics": [
+    {
+      "id": "root_cause",
+      "kind": "binary",
+      "label": "Root cause"
+    },
+    {
+      "id": "format",
+      "kind": "binary",
+      "label": "Format"
+    }
+  ],
+  "perf_fields": [
+    {
+      "id": "list_cost_usd",
+      "label": "List cost",
+      "unit": "$"
+    },
+    {
+      "id": "rate_card_usd",
+      "label": "Rate card",
+      "unit": "$"
+    },
+    {
+      "id": "latency_s",
+      "label": "Latency",
+      "unit": "s"
+    },
+    {
+      "id": "tool_calls",
+      "label": "Tool calls"
+    },
+    {
+      "id": "out_tokens",
+      "label": "Out tokens"
+    }
+  ],
+  "walk": [
+    {
+      "variant": "baseline",
+      "model": "claude-opus-4-8",
+      "effort": null,
+      "role": "baseline",
+      "verdict": "reference",
+      "adopted": true,
+      "why": "the workshop's model at its default effort (echoes xhigh); sets the floor: root_cause(train+test) >= 90.0%"
+    },
+    {
+      "variant": "v1",
+      "model": "claude-sonnet-5-5",
+      "effort": "low",
+      "role": "walk",
+      "verdict": "fail (format 61.9% < 95%; root_cause passes)",
+      "adopted": false,
+      "why": "entry cell: highest cost-plausible tier at low effort (Opus 5.5 excluded)"
+    },
+    {
+      "variant": "v2",
+      "model": "claude-opus-4-8",
+      "effort": "low",
+      "role": "diagnostic",
+      "verdict": "would pass (root_cause 100%, format 100%) but off-path by design",
+      "adopted": false,
+      "why": "round-0 diagnostic: is the effort dial alive on the old model? Yes: out tokens 4371 -> 1735/session, cost $0.241 -> $0.137"
+    },
+    {
+      "variant": "v3",
+      "model": "claude-sonnet-5-5",
+      "effort": "medium",
+      "role": "walk",
+      "verdict": "fail (format 69.0% < 95%; root_cause 100%)",
+      "adopted": false,
+      "why": "v1 failed -> one notch right"
+    },
+    {
+      "variant": "v4",
+      "model": "claude-sonnet-5-5",
+      "effort": "high",
+      "role": "walk",
+      "verdict": "fail (format 52.4% < 95%; root_cause 100%)",
+      "adopted": false,
+      "why": "v3 failed -> second and last notch right"
+    },
+    {
+      "variant": "v5",
+      "model": "claude-haiku-5-5",
+      "effort": "low",
+      "role": "walk",
+      "prompt": "climbed prompt r1",
+      "verdict": "pass after the C0.4 confirmation run (84 rows: root_cause 63/68 = 92.6%, format 80/84 = 95.2%, reg-verbatim 4/4; both still within noise, margins of 2 and 0 rows)",
+      "adopted": true,
+      "why": "climbed Sonnet 5.5 low passed the floor at 3.33\u00a2 -> step down to Haiku 5.5 low (projected under the incumbent)",
+      "first_two_reps": "fail (root_cause 30/34, format 39/42; within noise)"
+    }
+  ],
+  "harness_sha": "c808e86bdb6d04f19d7590b2862192c74c4fae6ff66e530940f33ab33e9f15f3",
+  "walk_status": {
+    "stopped": "2026-10-14",
+    "incumbent": "v5 (Haiku 5.5 low + climbed prompt r1)",
+    "reason": "Haiku 5.5 low is the cheapest cell in the grid and passes the floor on all 84 rows after the pre-registered confirmation run; nothing cheaper to step down to. Margins are thin (format exactly one row above 95%) and all misses are on test (root_cause 27/32 on test vs 32/32 for climbed Sonnet low).",
+    "decision": "Steffany, 2026-10-14: the walk ends; Haiku 5.5 low (v5) stays the walk's incumbent (narrow pass); no Haiku medium. Deployment recommendation (separate from the walk): climbed Sonnet 5.5 low (climb/v1), which passes with margin; Haiku is the cost-optimal option pending a bold-label prompt fix (next work)."
+  },
+  "confirmation_rule": "C0.4 within-noise rule ran twice: it confirmed climb round 1 (40/42 -> 82/84 format, pass both times) and changed one verdict (Haiku 5.5 low: fail at 2 reps -> pass at 4 reps)"
+}
