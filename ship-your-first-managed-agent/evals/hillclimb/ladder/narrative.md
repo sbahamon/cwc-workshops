@@ -50,4 +50,6 @@ Every cell got a one-session canary first: `pilot/sonnet-5-5-{low,medium,high}`,
 
 - **Phase 8 on Sonnet 5.5 low.** Its only failure looks prompt-addressable: a rule like "the root-cause line is exactly one sentence; put the fix elsewhere". That's the case the hillclimb is for, at 6.4× cheaper. The round-0 diagnostic suggests effort won't fix it.
 - **Or reconsider Opus 4.8 low** as a candidate. It passes the floor outright at 13.7¢ (43% cheaper), but it was pre-registered as off-path, so including it is your call, not mine.
-- **Haiku 5.5 was never run in the ladder.** Tier monotonicity presumed it fails. With root cause at 100% everywhere it may not; it's cheap to check (about $0.85 for 42 sessions) if you want it in the story.
+- **Haiku 5.5 was never run in the ladder**, and this is the one place the walk's pruning rests on an assumption the data don't support. Tier monotonicity is a *quality* assumption (at fixed effort, quality rises with tier), but what failed every Sonnet cell is *verbosity*, and nothing says verbosity is monotone in tier: a smaller model may well be terser. 42 sessions, about 85¢ list.
+
+**Reading the chart:** it plots the *official* grades, so Sonnet low sits at 97.1% with an error bar the other Sonnet cells don't have. After the grader fix and an in-place regrade it moves to 100%. It isn't less accurate than Sonnet medium.
