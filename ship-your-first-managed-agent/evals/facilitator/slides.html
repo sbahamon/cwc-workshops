@@ -1,0 +1,462 @@
+<!doctype html>
+<!-- Copyright 2026 Anthropic PBC -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  The lab's projected slides. One file, no build step, works offline; open it in a browser.
+  Keys: ← → / space to move (the dial slide steps through its builds), A appendix,
+  B back from the appendix, H home, F fullscreen. Every number here is checked against the
+  README's expected output by tests/test_lab.py.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Make It Cheap · Slides</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  --bg: #faf9f5; --ink: #141413; --muted: #65645e; --panel: #f2f0ea; --panel-2: #ece9e0;
+  --line: #14141338; --line-soft: #1414131c; --accent: #c15f3c; --accent-deep: #a94e2f;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--ink); overflow: hidden; }
+body { font-family: var(--sans); }
+#viewport { position: fixed; inset: 0; display: grid; place-items: center; }
+#stage { width: 1280px; height: 720px; position: relative; transform-origin: center; }
+
+.slide { position: absolute; inset: 0; padding: 56px 72px 96px; display: none; flex-direction: column; }
+.slide.on { display: flex; }
+.label { font: 500 15px/1 var(--mono); letter-spacing: .12em; color: var(--muted); text-transform: uppercase; margin-bottom: 22px; }
+.label b { color: var(--accent); font-weight: 500; }
+h1 { font: 600 44px/1.15 var(--mono); letter-spacing: -.01em; }
+h1.big { font-size: 58px; }
+.rule { font: 400 18px/1 var(--mono); color: var(--line); white-space: nowrap; overflow: hidden; margin: 14px 0 30px; }
+.rule::before { content: "================================================================================================================"; }
+.rule.thin::before { content: "----------------------------------------------------------------------------------------------------------------"; }
+p, li { font-size: 26px; line-height: 1.45; }
+.muted { color: var(--muted); }
+.accent { color: var(--accent); }
+.small { font-size: 20px; }
+ul.tree { list-style: none; }
+ul.tree li { padding-left: 1.6em; position: relative; margin: 6px 0; }
+ul.tree li::before { content: "└"; position: absolute; left: .2em; color: var(--muted); font-family: var(--mono); }
+code, .cmd { font-family: var(--mono); }
+p code, li code { font-size: .88em; background: var(--panel); padding: 1px 6px; white-space: nowrap; }
+.cmd { background: var(--panel); border-left: 3px solid var(--accent); padding: 18px 22px; font-size: 24px; margin: 18px 0; white-space: pre-wrap; }
+.cmd::before { content: "$ "; color: var(--muted); }
+.out { background: var(--panel-2); padding: 14px 22px; font: 20px/1.5 var(--mono); color: var(--ink); white-space: pre-wrap; }
+.out::before { content: "→ "; color: var(--accent); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+.panel { background: var(--panel); padding: 22px 26px; }
+.panel h3 { font: 600 16px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+.stat { font: 600 96px/1 var(--mono); color: var(--accent); }
+.stat.ink { color: var(--ink); }
+.statlabel { font: 20px/1.35 var(--sans); color: var(--muted); margin-top: 8px; }
+figure { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+figure img { flex: 1; min-height: 0; object-fit: contain; width: 100%; }
+figcaption { font: 16px var(--mono); color: var(--muted); margin-top: 8px; }
+svg text { font-family: var(--mono); }
+a { color: var(--accent-deep); }
+.aindex { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 40px; margin-top: 8px; }
+.aindex a { font: 24px/1.4 var(--mono); text-decoration: none; color: var(--ink); padding: 14px 18px; background: var(--panel); display: block; }
+.aindex a:hover { background: var(--panel-2); }
+.aindex a span { color: var(--accent); margin-right: 12px; }
+.sym { font: 600 18px var(--mono); letter-spacing: .08em; color: var(--muted); text-transform: uppercase; margin: 18px 0 6px; }
+.caption { font: 24px/1.4 var(--mono); min-height: 2.8em; }
+.caption b { color: var(--accent); font-weight: 600; }
+
+#chrome { position: absolute; left: 72px; right: 72px; bottom: 26px; font: 13px/1 var(--mono); color: var(--muted); letter-spacing: .06em; }
+#bar { font: 14px/1 var(--mono); white-space: nowrap; overflow: hidden; margin-bottom: 12px; color: var(--line); }
+#bar i { color: var(--accent); font-style: normal; }
+#foot { display: flex; justify-content: space-between; gap: 24px; text-transform: uppercase; }
+#foot a { color: var(--muted); text-decoration: none; }
+#foot a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+<!-- ═════════ 1 · title ═════════ -->
+<section class="slide" data-label="Follow-on lab · 45 min">
+  <div style="margin-top:60px"></div>
+  <h1 class="big">Your SRE agent works.<br><span class="accent">Now make it cheap.</span></h1>
+  <div class="rule"></div>
+  <p class="muted">A follow-on to <em>Ship Your First Managed Agent</em>, Gagan Bhat's Code with Claude workshop.</p>
+  <p class="muted small" style="margin-top:40px">The whole lab on recorded runs, no API key:</p>
+  <div class="cmd">uv run python checkpoint.py all --solution</div>
+</section>
+
+<!-- ═════════ 2 · the question ═════════ -->
+<section class="slide" data-label="The story · 0–5 min">
+  <h1>Finance has a question.</h1>
+  <div class="rule"></div>
+  <div class="grid2">
+    <div>
+      <div class="stat ink">24¢</div>
+      <div class="statlabel">per incident today: Opus 4.8, default effort. It names <code>a3f9c21</code> every time.</div>
+    </div>
+    <div class="panel">
+      <h3>The question</h3>
+      <p>Would a cheaper model catch the same root causes?</p>
+      <h3 style="margin-top:26px">What we have</h3>
+      <ul class="tree"><li>one incident</li><li>one test, and it can't tell right from lucky</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 3 · two harnesses ═════════ -->
+<section class="slide" data-label="The story · two meanings of “harness”">
+  <h1>Two harnesses.</h1>
+  <div class="rule"></div>
+  <div class="grid2">
+    <div>
+      <svg viewBox="0 0 520 220" width="100%" aria-label="The agent harness: the model calls tools, the results go back to the model, in a loop">
+        <g font-size="19" text-anchor="middle">
+          <rect x="20" y="70" width="130" height="70" fill="#f2f0ea" stroke="#14141338"/><text x="85" y="112" fill="#141413">model</text>
+          <rect x="195" y="70" width="130" height="70" fill="#faf9f5" stroke="#14141338"/><text x="260" y="112" fill="#65645e">tools</text>
+          <rect x="370" y="70" width="130" height="70" fill="#faf9f5" stroke="#14141338"/><text x="435" y="112" fill="#65645e">results</text>
+        </g>
+        <path d="M150 105 L189 105" stroke="#65645e" stroke-dasharray="4 3" fill="none"/><path d="M183 100 L189 105 L183 110" stroke="#65645e" fill="none"/>
+        <path d="M325 105 L364 105" stroke="#65645e" stroke-dasharray="4 3" fill="none"/><path d="M358 100 L364 105 L358 110" stroke="#65645e" fill="none"/>
+        <path d="M435 140 C435 205 85 205 85 146" stroke="#c15f3c" fill="none" stroke-dasharray="4 3"/><path d="M80 152 L85 146 L90 152" stroke="#c15f3c" fill="none"/>
+        <text x="260" y="40" text-anchor="middle" font-size="15" fill="#65645e" letter-spacing="2">THE LOOP</text>
+      </svg>
+      <p><b>Agent harness.</b> <span class="muted">The loop around the model. On Managed Agents, Anthropic runs it.</span></p>
+    </div>
+    <div>
+      <svg viewBox="0 0 520 220" width="100%" aria-label="The eval harness: cases, runner, graders and cost, locked behind a fingerprint">
+        <rect x="10" y="40" width="500" height="140" fill="none" stroke="#c15f3c" stroke-dasharray="6 4"/>
+        <g font-size="17" fill="#141413" text-anchor="middle">
+          <rect x="30" y="80" width="100" height="60" fill="#f2f0ea" stroke="#14141338"/><text x="80" y="116">cases</text>
+          <rect x="150" y="80" width="100" height="60" fill="#f2f0ea" stroke="#14141338"/><text x="200" y="116">runner</text>
+          <rect x="270" y="80" width="100" height="60" fill="#f2f0ea" stroke="#14141338"/><text x="320" y="116">graders</text>
+          <rect x="390" y="80" width="100" height="60" fill="#f2f0ea" stroke="#14141338"/><text x="440" y="116">cost</text>
+        </g>
+        <text x="260" y="28" text-anchor="middle" font-size="15" fill="#c15f3c" letter-spacing="2">FINGERPRINTED · HUMAN-APPROVED</text>
+      </svg>
+      <p><b>Eval harness.</b> <span class="muted">The ruler. It can't change without an approval, so a score can't rise by editing the grader.</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 4 · three dials (5 builds) ═════════ -->
+<section class="slide" data-label="The story · how the walk and the hillclimb work" data-builds="5">
+  <h1>Three dials, one floor.</h1>
+  <div class="rule"></div>
+  <svg id="dials" viewBox="0 0 1136 330" width="100%" aria-label="Three dials, model, effort and prompt, next to a meter with a floor line"></svg>
+  <div class="caption" id="dialcap"></div>
+</section>
+
+<!-- ═════════ 5 · checkpoint 1 ═════════ -->
+<section class="slide" data-label="<b>Checkpoint 1</b> · 5–15 min">
+  <h1>Write the grader.</h1>
+  <div class="rule"></div>
+  <p>Did the agent name the right culprit? Write <code>grade_root_cause</code> in <code>lab/grading.py</code>.</p>
+  <div class="cmd">uv run python checkpoint.py 1</div>
+  <div class="out">16/16 fixtures pass. Next: checkpoint 2.</div>
+  <p class="muted small" style="margin-top:22px">Stuck? <code>--solution</code> runs the reference in <code>lab_complete/</code>.</p>
+</section>
+
+<!-- ═════════ 6 · checkpoint 2 ═════════ -->
+<section class="slide" data-label="<b>Checkpoint 2</b> · 15–22 min">
+  <h1>Catch the old grader out.</h1>
+  <div class="rule"></div>
+  <p>Run your grader next to the workshop's only test, on every recorded reply.</p>
+  <div class="cmd">uv run python checkpoint.py 2</div>
+  <p class="muted small">Nothing new to write. Read the four counts.</p>
+</section>
+
+<!-- ═════════ 7 · reveal: the grader moment ═════════ -->
+<section class="slide" data-label="Checkpoint 2 · <b>what you just saw</b>">
+  <h1>The test was too strict.</h1>
+  <div class="rule"></div>
+  <div class="grid2">
+    <div>
+      <div class="stat">40</div>
+      <div class="statlabel">correct answers <code>e2e.py</code> fails, of 289 recorded deploy-case replies. None of them writes “N+1”.</div>
+      <div class="stat ink" style="margin-top:28px">0</div>
+      <div class="statlabel">wrong answers it passes. That failure exists only as a written fixture.</div>
+    </div>
+    <div class="panel">
+      <h3>Right, but no “N+1”</h3>
+      <p class="small" style="font-family:var(--mono);line-height:1.5"><b>Root cause:</b> <code>0c1986c</code> — <code>price_cart</code> now runs one <code>SELECT</code> per cart line instead of a single batched <code>IN</code> query…</p>
+      <p class="muted small" style="margin-top:14px">ladder/v1, dc-cart rep 1</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 8 · checkpoint 3 ═════════ -->
+<section class="slide" data-label="<b>Checkpoint 3</b> · 22–30 min">
+  <h1>Price a session.</h1>
+  <div class="rule"></div>
+  <p>Turn token counts into dollars. Write <code>session_cost</code> in <code>lab/cost.py</code>.</p>
+  <div class="cmd">uv run python checkpoint.py 3</div>
+  <div class="out">Your session_cost matches pricing.py on 407/407 recorded sessions.</div>
+</section>
+
+<!-- ═════════ 9 · checkpoint 4 ═════════ -->
+<section class="slide" data-label="<b>Checkpoint 4</b> · 30–34 min">
+  <h1>Swap the model.</h1>
+  <div class="rule"></div>
+  <p>One line in <code>lab/cell.py</code>:</p>
+  <div class="out" style="margin:14px 0">MODEL, EFFORT = "claude-haiku-5-5", "low"</div>
+  <div class="cmd">uv run python checkpoint.py 4</div>
+  <p class="muted small">Optional, one volunteer with a key: <code>--live</code> runs it for real, about 2¢.</p>
+</section>
+
+<!-- ═════════ 10 · checkpoint 5 ═════════ -->
+<section class="slide" data-label="<b>Checkpoint 5</b> · 34–43 min">
+  <figure>
+    <img src="../results/path.svg" alt="The cost-reduction path: root-cause accuracy against cost per incident, with the adopted path numbered">
+    <figcaption>$ uv run python checkpoint.py 5 &nbsp;·&nbsp; read it top to bottom: the floor first, then the costs</figcaption>
+  </figure>
+</section>
+
+<!-- ═════════ 11 · wrap ═════════ -->
+<section class="slide" data-label="Wrap · 43–45 min">
+  <h1>What to tell finance.</h1>
+  <div class="rule"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Deploy this</h3>
+      <div class="stat" style="font-size:72px">3.41¢</div>
+      <div class="statlabel">Sonnet 5.5 low, climbed prompt. 7× cheaper than 24.02¢, and it passes the floor with margin.</div>
+    </div>
+    <div class="panel">
+      <h3>Cheapest, not yet</h3>
+      <div class="stat ink" style="font-size:72px">0.42¢</div>
+      <div class="statlabel">Haiku 5.5 low. 57× cheaper, but a narrow pass: most misses drop the bold label.</div>
+    </div>
+  </div>
+  <ul class="tree small" style="margin-top:24px">
+    <li>Next: one prompt round aimed at Haiku's bold label, same floor</li>
+    <li>Stretch: <code>/claude-api hillclimb</code> on <code>prompts/system.md</code></li>
+  </ul>
+</section>
+
+<!-- ═════════ appendix ═════════ -->
+<section class="slide" id="appendix" data-label="Appendix · troubleshooting" data-appendix>
+  <h1>Troubleshooting.</h1>
+  <div class="rule"></div>
+  <div class="aindex">
+    <a href="#A1"><span>A1</span>Checkpoint 1: the identifier</a>
+    <a href="#A2"><span>A2</span>Checkpoint 3: the price is off</a>
+    <a href="#A3"><span>A3</span>Imports fail, or <code>--live</code> errors</a>
+    <a href="#A4"><span>A4</span>The API is slow or down</a>
+    <a href="#A5"><span>A5</span>A broken setup</a>
+    <a href="#A6"><span>A6</span>“Haiku missed a case”</a>
+  </div>
+  <p class="muted small" style="margin-top:26px">[B] goes back to the slide you were on.</p>
+</section>
+
+<section class="slide" id="A1" data-label="Appendix · A1" data-appendix>
+  <h1>Checkpoint 1: the identifier.</h1>
+  <div class="rule thin"></div>
+  <div class="sym">Symptom</div>
+  <p>Fails “a sha followed by a period”, “'commit' before the sha” or “component in plain words”.</p>
+  <div class="sym">Fix</div>
+  <ul class="tree">
+    <li>Print what your code thinks the identifier is, for the failing fixture.</li>
+    <li>The docstring's rules are in the order you'll need them.</li>
+    <li>Still stuck at minute 13: <code>--solution</code>, and read <code>lab_complete/grading.py</code>.</li>
+  </ul>
+</section>
+
+<section class="slide" id="A2" data-label="Appendix · A2" data-appendix>
+  <h1>Checkpoint 3: the price is off.</h1>
+  <div class="rule thin"></div>
+  <div class="sym">Check, in this order</div>
+  <ul class="tree">
+    <li>Rates are per <b>million</b> tokens.</li>
+    <li>Add runtime: $0.08 per hour of active time.</li>
+    <li>Only Haiku wrong? Price <b>each request</b> on its own: the long-prompt tier is per request.</li>
+  </ul>
+  <p class="muted small" style="margin-top:20px">Your Opus number should round to the session's <code>list_cost</code>, to the cent.</p>
+</section>
+
+<section class="slide" id="A3" data-label="Appendix · A3" data-appendix>
+  <h1>Imports fail, or <code style="background:none">--live</code> errors.</h1>
+  <div class="rule thin"></div>
+  <ul class="tree">
+    <li><b>ModuleNotFoundError:</b> run from <code>ship-your-first-managed-agent/evals/</code>.</li>
+    <li><b>400 asking for <code>anthropic-workspace-id</code>:</b> create the API key inside a workspace.</li>
+    <li><b>“No recorded run for this cell”:</b> expected for anything but the six recorded canaries. Run it with <code>--live</code>, or pick a recorded cell.</li>
+  </ul>
+</section>
+
+<section class="slide" id="A4" data-label="Appendix · A4" data-appendix>
+  <h1>The API is slow or down.</h1>
+  <div class="rule thin"></div>
+  <p>Nothing in the core lab needs the API. Every checkpoint replays <code>results/</code>.</p>
+  <ul class="tree" style="margin-top:14px">
+    <li><code>--live</code> hangs, or returns 429 / 529: Ctrl-C, then run it without <code>--live</code>.</li>
+    <li>A room of 30 on <code>--live</code> trips rate limits. Make it one volunteer's demo.</li>
+  </ul>
+</section>
+
+<section class="slide" id="A5" data-label="Appendix · A5" data-appendix>
+  <h1>A broken setup.</h1>
+  <div class="rule thin"></div>
+  <ul class="tree">
+    <li>Pair with a neighbour, or follow on the facilitator's screen:</li>
+  </ul>
+  <div class="cmd">uv run python checkpoint.py all --solution</div>
+  <ul class="tree">
+    <li><code>uv</code> can't reach the network: run <code>uv run pytest</code> once before the session, so the environment is cached.</li>
+  </ul>
+</section>
+
+<section class="slide" id="A6" data-label="Appendix · A6" data-appendix>
+  <h1>“Haiku missed a case.”</h1>
+  <div class="rule thin"></div>
+  <ul class="tree">
+    <li>Open the miss. Four of the five write a plain <code>Root cause:</code> without the bold label.</li>
+    <li>“Didn't write the line” and “named the wrong commit” need different fixes, so they're scored apart.</li>
+    <li>Don't loosen the grader to pass it. The honest fix is a prompt round, measured against the same floor.</li>
+  </ul>
+</section>
+
+<div id="chrome">
+  <div id="bar"></div>
+  <div id="foot">
+    <span>Not official Anthropic work · a private proof of concept</span>
+    <span>[←][→] nav &nbsp;<a href="#appendix">[A] appendix</a>&nbsp; [H] home &nbsp;[F] fullscreen</span>
+    <span id="count"></span>
+  </div>
+</div>
+
+</div></div>
+<script>
+(() => {
+  const slides = [...document.querySelectorAll(".slide")];
+  const main = slides.filter(s => !s.hasAttribute("data-appendix"));
+  const stage = document.getElementById("stage");
+  let i = 0, step = 0, back = 0;
+
+  // label line: section label rendered from data-label
+  slides.forEach(s => {
+    const l = document.createElement("div");
+    l.className = "label"; l.innerHTML = s.dataset.label;
+    s.prepend(l);
+  });
+
+  function fit() {
+    const k = Math.min(innerWidth / 1280, innerHeight / 720);
+    stage.style.transform = `scale(${k})`;
+  }
+
+  // ── the dial slide: one base drawing, one dial highlighted per build ──
+  const C = { ink: "#141413", muted: "#65645e", line: "#14141338", soft: "#1414131c", panel: "#f2f0ea", accent: "#c15f3c", bg: "#faf9f5" };
+  const DIALS = [
+    { name: "MODEL", stops: ["Opus", "Sonnet", "Haiku"], arc: [-100, 100] },
+    { name: "EFFORT", stops: ["low", "medium", "high", "xhigh", "max"], arc: [-120, 120] },
+    { name: "PROMPT", stops: ["shipped", "climbed"], arc: [-40, 40] },
+  ];
+  const BUILDS = [  // [model, effort, prompt], highlighted dial, meter (pass/fail/ref), caption
+    [[0, 3, 0], -1, "ref", "<b>Start</b> at the baseline. Its score sets the floor."],
+    [[1, 0, 0], 0, "fail", "<b>Turn Model down</b> a tier. Re-measure against the floor."],
+    [[1, 2, 0], 1, "fail", "Short of the floor? <b>Try Effort</b> first: the cheapest dial to turn."],
+    [[1, 0, 1], 2, "pass", "Still short? <b>Turn Prompt</b>: one change from the train failures, kept only if train and test both rise."],
+    [[2, 0, 1], 0, "pass", "Clears the floor? <b>Turn Model down again.</b> Same floor, same rule."],
+  ];
+  const pol = (cx, cy, r, deg) => [cx + r * Math.sin(deg * Math.PI / 180), cy - r * Math.cos(deg * Math.PI / 180)];
+  function dialSVG(d, cx, cy, at, hot) {
+    const r = 92, col = hot ? C.accent : C.muted, n = d.stops.length;
+    const ang = k => d.arc[0] + (d.arc[1] - d.arc[0]) * (n === 1 ? 0 : k / (n - 1));
+    let s = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${C.panel}" stroke="${hot ? C.accent : C.line}" stroke-width="${hot ? 2 : 1}"/>`;
+    const [ax, ay] = pol(cx, cy, r - 14, d.arc[0]), [bx, by] = pol(cx, cy, r - 14, d.arc[1]);
+    const large = d.arc[1] - d.arc[0] > 180 ? 1 : 0;
+    s += `<path d="M${ax} ${ay} A${r - 14} ${r - 14} 0 ${large} 1 ${bx} ${by}" fill="none" stroke="${C.soft}" stroke-width="6"/>`;
+    d.stops.forEach((t, k) => {
+      const [x1, y1] = pol(cx, cy, r - 20, ang(k)), [x2, y2] = pol(cx, cy, r - 8, ang(k)), [lx, ly] = pol(cx, cy, r + (Math.abs(ang(k)) > 10 && Math.abs(ang(k)) <= 50 ? 30 : 14), ang(k));
+      s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${k === at ? col : C.line}" stroke-width="2"/>`;
+      const anchor = ang(k) < -50 ? "end" : ang(k) > 50 ? "start" : "middle";
+      s += `<text x="${lx}" y="${ly + 5}" text-anchor="${anchor}" font-size="15" fill="${k === at ? (hot ? C.accent : C.ink) : C.muted}">${t}</text>`;
+    });
+    const [nx, ny] = pol(cx, cy, r - 30, ang(at));
+    s += `<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${hot ? C.accent : C.ink}" stroke-width="4" stroke-linecap="round"/>`;
+    s += `<circle cx="${cx}" cy="${cy}" r="7" fill="${hot ? C.accent : C.ink}"/>`;
+    s += `<text x="${cx}" y="${cy + r + 52}" text-anchor="middle" font-size="17" letter-spacing="3" fill="${hot ? C.accent : C.muted}">${d.name}</text>`;
+    return s;
+  }
+  function meterSVG(x, kind) {
+    const top = 40, h = 220, floorY = top + 70;
+    const fill = { ref: top + 20, pass: top + 50, fail: top + 120 }[kind];
+    let s = `<rect x="${x}" y="${top}" width="70" height="${h}" fill="${C.panel}" stroke="${C.line}"/>`;
+    s += `<rect x="${x}" y="${fill}" width="70" height="${top + h - fill}" fill="${kind === "fail" ? C.muted : C.accent}" opacity="${kind === "fail" ? .45 : .9}"/>`;
+    s += `<line x1="${x - 18}" x2="${x + 88}" y1="${floorY}" y2="${floorY}" stroke="${C.ink}" stroke-dasharray="3 4" stroke-linecap="round"/>`;
+    s += `<text x="${x + 98}" y="${floorY + 5}" font-size="15" fill="${C.muted}">floor</text>`;
+    const word = { ref: "SETS IT", pass: "PASS", fail: "FAIL" }[kind];
+    s += `<text x="${x + 35}" y="${top + h + 50}" text-anchor="middle" font-size="17" letter-spacing="3" fill="${kind === "fail" ? C.muted : C.accent}">${word}</text>`;
+    return s;
+  }
+  function drawDials(b) {
+    const [at, hot, kind, cap] = BUILDS[b];
+    const xs = [170, 470, 770];
+    document.getElementById("dials").innerHTML =
+      DIALS.map((d, k) => dialSVG(d, xs[k], 140, at[k], hot === k)).join("") +
+      `<path d="M900 140 L950 140" stroke="${C.muted}" stroke-dasharray="4 3"/><path d="M944 134 L950 140 L944 146" stroke="${C.muted}" fill="none"/>` +
+      meterSVG(985, kind);
+    document.getElementById("dialcap").innerHTML = cap;
+  }
+
+  function render() {
+    slides.forEach((s, k) => s.classList.toggle("on", k === i));
+    const s = slides[i], builds = +(s.dataset.builds || 0);
+    if (s.querySelector("#dials")) drawDials(Math.min(step, BUILDS.length - 1));
+    const m = main.indexOf(s);
+    const pad = n => String(n).padStart(2, "0");
+    document.getElementById("count").textContent = m >= 0 ? `${pad(m + 1)} / ${pad(main.length)}` : (s.id === "appendix" ? "Appendix" : `Appendix ${s.id}`);
+    const done = m >= 0 ? m + 1 : main.length, bar = document.getElementById("bar");
+    const cells = Math.floor(bar.clientWidth / (bar.dataset.cw ||= measure(bar)));
+    const on = Math.round(cells * done / main.length);
+    document.getElementById("bar").innerHTML = `<i>${"▓".repeat(on)}</i>${"░".repeat(cells - on)}`;
+    const h = `#${s.id && s.hasAttribute("data-appendix") ? s.id : m + 1}${builds && step ? "." + (step + 1) : ""}`;
+    if (location.hash !== h) history.replaceState(null, "", h);
+  }
+  function measure(el) { const s = document.createElement("span"); s.textContent = "░".repeat(50); el.append(s); const w = s.getBoundingClientRect().width / 50 / (stage.getBoundingClientRect().width / 1280); s.remove(); return w; }
+  function go(k, st = 0) { i = Math.max(0, Math.min(slides.length - 1, k)); step = st; render(); }
+  function next() {
+    const b = +(slides[i].dataset.builds || 0);
+    if (b && step < b - 1) { step++; render(); } else go(i + 1);
+  }
+  function prev() {
+    const b = +(slides[i].dataset.builds || 0);
+    if (b && step > 0) { step--; render(); return; }
+    const pb = +(slides[i - 1]?.dataset.builds || 0);
+    go(i - 1, pb ? pb - 1 : 0);
+  }
+  function toAppendix() { if (!slides[i].hasAttribute("data-appendix")) back = i; go(slides.indexOf(document.getElementById("appendix"))); }
+  function fromHash() {
+    const [a, b] = location.hash.slice(1).split(".");
+    const byId = document.getElementById(a);
+    if (byId && byId.classList.contains("slide")) { go(slides.indexOf(byId)); return; }
+    const n = parseInt(a, 10);
+    if (n >= 1 && n <= main.length) go(slides.indexOf(main[n - 1]), b ? +b - 1 : 0); else go(0);
+  }
+
+  addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (["ArrowRight", "PageDown", " ", "Enter"].includes(k)) { e.preventDefault(); next(); }
+    else if (["ArrowLeft", "PageUp", "Backspace"].includes(k)) { e.preventDefault(); prev(); }
+    else if (k === "a" || k === "A") toAppendix();
+    else if (k === "b" || k === "B") go(back);
+    else if (k === "h" || k === "H" || k === "Home") go(0);
+    else if (k === "End") go(slides.indexOf(main[main.length - 1]));
+    else if (k === "f" || k === "F") document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+  });
+  document.getElementById("stage").addEventListener("click", e => {
+    const a = e.target.closest("a");
+    if (a) { if (a.getAttribute("href") === "#appendix") { e.preventDefault(); toAppendix(); } return; }
+    next();
+  });
+  addEventListener("hashchange", fromHash);
+  addEventListener("resize", fit);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

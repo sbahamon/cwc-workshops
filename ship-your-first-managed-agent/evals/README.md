@@ -62,7 +62,7 @@ nothing else: no key, no network after the first `uv` install, no spend.
 | For | Where |
 |---|---|
 | **You, in the lab** | `lab/` (your code), `lab_complete/` (the reference), `checkpoint.py`, `viewer.py`, `results/` (the recorded runs every checkpoint replays) |
-| **Facilitators** | [`facilitator/`](facilitator/README.md): the guide. `notes-draft.md` is its earlier working draft. |
+| **Facilitators** | [`facilitator/`](facilitator/README.md): the guide, and [`slides.html`](facilitator/slides.html), the projected slides with a troubleshooting appendix. `notes-draft.md` is the guide's earlier working draft. |
 | **The eval harness** | `run.py`, `graders.py`, `tools.py`, `cases.py`, `generate.py`, `specs.py`, `scenario.py`, `diffs.py`, `pricing.py`, `spend.py`, and `prompts/system.md`. They stay at the top level because their paths are part of the harness fingerprint `run.py` checks. |
 | **Analysis scripts** | `walk.py` (floor verdicts), `ledger.py`, `snapshot.py`, `plot_path.py` (the chart), `regrade.py`, `shadow_regrade.py` |
 | **Planning** | [`planning/`](planning/plan.md): the implementation plan and session log (`plan.md`), the original brief (`BUILD_BRIEF.md`) and the proof-of-concept plan (`sre-agent-eval-poc-plan.md`). The one-page summary is [`../ONE_PAGER.md`](../ONE_PAGER.md). |

@@ -10,6 +10,12 @@ or watched it.
 The lab runs in 45 minutes with no API key: every checkpoint replays recorded runs from
 `results/`. The only live step (`checkpoint.py 4 --live`, about 2¢) is optional.
 
+**Slides:** open [`slides.html`](slides.html) in a browser (it works offline). Arrow keys
+move, and the dial slide steps through five builds. `A` jumps to the troubleshooting
+appendix and `B` comes back. Each checkpoint's slide stays up while people type. The two
+reveal slides (7 and 11) go up only after the room has seen the result in their own
+terminal.
+
 ## Ready to teach? Check yourself first
 
 Do each of these on a fresh clone before you teach:
@@ -37,15 +43,15 @@ Do each of these on a fresh clone before you teach:
 
 ## Timing plan (45 minutes)
 
-| Minutes | Segment | What happens |
-|---|---|---|
-| 0–5 | The story | Finance asks if a cheaper model catches the same root causes. Name the two meanings of "harness" now (below). Show the one-command demo from your screen. |
-| 5–15 | Checkpoint 1 | Learners write `grade_root_cause`. Circulate. Most time goes here. |
-| 15–22 | Checkpoint 2 | The grader moment. Use the talk-track below; this is the segment people remember. |
-| 22–30 | Checkpoint 3 | `session_cost`. Land the Haiku list-cost gap at the end. |
-| 30–34 | Checkpoint 4 | The one-line swap. Volunteers with a key can try `--live`; everyone else reads the recorded canary. |
-| 34–43 | Checkpoint 5 | Read the path chart together, top to bottom (README, "Reading the chart"). Optionally project `viewer.py` instead of the PNG and click into a few of checkpoint 2's 40 rows (Cases tab, `ladder/v5`). |
-| 43–45 | Wrap | The recommendation, and what you'd do next (the bold-label prompt round; the stretch; running eval cases through the dashboard's own chat panel, which isn't built yet). |
+| Minutes | Slides | Segment | What happens |
+|---|---|---|---|
+| 0–5 | 1–4 | The story | Finance asks if a cheaper model catches the same root causes. Name the two meanings of "harness" now (below). Step through the three dials. Show the one-command demo from your screen. |
+| 5–15 | 5 | Checkpoint 1 | Learners write `grade_root_cause`. Circulate. Most time goes here. |
+| 15–22 | 6, then 7 | Checkpoint 2 | The grader moment. Use the talk-track below; this is the segment people remember. |
+| 22–30 | 8 | Checkpoint 3 | `session_cost`. Land the Haiku list-cost gap at the end. |
+| 30–34 | 9 | Checkpoint 4 | The one-line swap. Volunteers with a key can try `--live`; everyone else reads the recorded canary. |
+| 34–43 | 10 | Checkpoint 5 | Read the path chart together, top to bottom (README, "Reading the chart"). Optionally project `viewer.py` instead of the PNG and click into a few of checkpoint 2's 40 rows (Cases tab, `ladder/v5`). |
+| 43–45 | 11 | Wrap | The recommendation, and what you'd do next (the bold-label prompt round; the stretch; running eval cases through the dashboard's own chat panel, which isn't built yet). |
 
 If you're behind, cut in this order: the `--live` run, then checkpoint 3's second half
 (learners take the reference with `--solution`), then the stretch mention. Never cut
@@ -155,11 +161,8 @@ Nothing in the core lab needs the API. Every checkpoint replays `results/`.
 - **The `uv` install can't reach the network.** Run the demo from your machine. Ask
   learners to run `uv run pytest` once before the session, so the environment is cached.
 
-## Known setup problems (both hit while building this lab)
+## Known setup problems (hit while building this lab)
 
-- **iCloud-synced folders.** A project inside Desktop or Documents can hang on `import
-  anthropic`, because iCloud offloads `.venv` files to the cloud. Clone into a folder like
-  `~/code`.
 - **Workspace-scoped keys.** An API key not scoped to a workspace fails with a 400 asking
   for the `anthropic-workspace-id` header. Create the key inside a workspace. A dedicated
   workspace with its own spend limit also caps the room's spend.

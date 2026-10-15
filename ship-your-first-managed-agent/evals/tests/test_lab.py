@@ -102,6 +102,24 @@ def test_checkpoint_output_is_what_the_readme_says(n, capsys):
     assert out == blocks[n], f"README.md checkpoint {n} block is out of date; paste the new output"
 
 
+def test_slides_agree_with_the_readme():
+    """facilitator/slides.html quotes checkpoint output; each (on the slide, in the README's
+    expected output) pair must hold, so the deck can't drift from the lab."""
+    slides = (EVALS / "facilitator" / "slides.html").read_text()
+    out = "\n".join(BLOCK.findall(README.read_text())[i][1] for i in range(5))
+    pairs = [("16/16 fixtures pass. Next: checkpoint 2.", "16/16 fixtures pass. Next: checkpoint 2."),
+             ("matches pricing.py on 407/407 recorded sessions", "matches pricing.py on 407/407 recorded sessions"),
+             ('<div class="stat">40</div>', "e2e.py fails a correct answer     40"),
+             ("of 289 recorded deploy-case replies", "all 289 recorded replies to deploy cases"),
+             ('<div class="stat ink" style="margin-top:28px">0</div>', "e2e.py passes a wrong answer       0"),
+             ("<code>0c1986c</code>", "`0c1986c`"),
+             ("3.41¢", "3.41¢"), ("0.42¢", "0.42¢"), ("24.02¢", "24.02¢"),
+             ("7× cheaper", "7.0×"), ("57× cheaper", "57.4×")]
+    for on_slide, in_readme in pairs:
+        assert on_slide in slides, f"slides.html no longer says {on_slide!r}"
+        assert in_readme in out, f"the README's checkpoint output no longer says {in_readme!r}; update slides.html"
+
+
 def test_stubs_are_unfinished_or_right(capsys):
     """lab/ ships as stubs. Once a learner fills them in, they must agree with the reference."""
     grading = importlib.import_module("lab.grading")
