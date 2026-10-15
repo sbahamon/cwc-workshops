@@ -28,6 +28,9 @@ Do each of these on a fresh clone before you teach:
 - [ ] You can explain `list_cost` vs the rate card, and why Haiku's two numbers differ.
 - [ ] You've run `checkpoint.py 4 --live` once with a workspace-scoped key, and seen the
       row land in `lab_runs/`.
+- [ ] You've opened the viewer once (`uv run --with streamlit==1.65.0 streamlit run
+      viewer.py`). The first `--with` run downloads Streamlit, so do it before class, on
+      a network you trust.
 - [ ] You can answer "is Haiku good enough?" with both halves: the walk's verdict (a
       narrow pass) and the recommendation (climbed Sonnet 5.5 low, because of held-out
       margin).
@@ -41,8 +44,8 @@ Do each of these on a fresh clone before you teach:
 | 15–22 | Checkpoint 2 | The grader moment. Use the talk-track below; this is the segment people remember. |
 | 22–30 | Checkpoint 3 | `session_cost`. Land the Haiku list-cost gap at the end. |
 | 30–34 | Checkpoint 4 | The one-line swap. Volunteers with a key can try `--live`; everyone else reads the recorded canary. |
-| 34–43 | Checkpoint 5 | Read the path chart together, top to bottom (README, "Reading the chart"). |
-| 43–45 | Wrap | The recommendation, and what you'd do next (the bold-label prompt round; the stretch). |
+| 34–43 | Checkpoint 5 | Read the path chart together, top to bottom (README, "Reading the chart"). Optionally project `viewer.py` instead of the PNG and click into a few of checkpoint 2's 40 rows (Cases tab, `ladder/v5`). |
+| 43–45 | Wrap | The recommendation, and what you'd do next (the bold-label prompt round; the stretch; running eval cases through the dashboard's own chat panel, which isn't built yet). |
 
 If you're behind, cut in this order: the `--live` run, then checkpoint 3's second half
 (learners take the reference with `--solution`), then the stretch mention. Never cut
@@ -179,6 +182,10 @@ Nothing in the core lab needs the API. Every checkpoint replays `results/`.
     $0.18 at the rate card on Haiku 5.5.
   - `run.py` refuses any run whose projection crosses the $50 cap.
   - `uv run python spend.py` shows where the money went.
+- **The eval and the dashboard are still separate.** `viewer.py` only reads recorded
+  results. Running eval cases through the workshop's real chat panel, or replaying eval
+  sessions in its session picker, isn't built yet. docs/plan.md, "What would come next",
+  says what each would take.
 
 ## What I found in the original lab
 

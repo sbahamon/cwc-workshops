@@ -310,6 +310,35 @@ Running the walk yourself costs real money: the Opus 4.8 baseline alone is about
 42 sessions. To regenerate the chart from the recorded runs:
 `uv run --with matplotlib==3.10.0 python plot_path.py`.
 
+## Optional: the path in a browser
+
+Checkpoint 5's table and chart, plus every reply behind them, in a small Streamlit page
+graded and priced by your own `lab/` code:
+
+```bash
+uv run --with streamlit==1.65.0 streamlit run viewer.py
+```
+
+It's read-only: it reads `results/` and never calls the API. Until checkpoints 1 and 3
+are done it says "not done yet". The sidebar toggle switches to `lab_complete/`, the same
+as `--solution`. Edit and save your `lab/` files, click **Rerun** (top right), and the
+page re-grades. Three things to
+look at:
+
+- **Path tab: your table.** The same numbers checkpoint 5 prints, with the floor verdict
+  for each cell and a log-scale chart. The recorded `path.png` is underneath for
+  comparison.
+- **Cases tab: the 40 rows from checkpoint 2.** Pick a cell, then "e2e.py fails a correct
+  answer". Most of the 40 are in `ladder/v5` (21) and `climb/v1` (13). Pick a row to see
+  the answer key, the root-cause line your grader read, and the full reply.
+- **Cases tab: what one session costs.** Each model request priced by your
+  `session_cost`, plus runtime.
+
+Streamlit isn't in `pyproject.toml` on purpose. Adding it would change `uv.lock`, and with
+it the harness sha that `run.py` checks. Not built yet: running eval cases through the
+workshop dashboard's own chat panel. That's in
+[`docs/plan.md`](../../docs/plan.md), "What would come next".
+
 ## Stretch: one hillclimb round
 
 Run a round of `/claude-api hillclimb` on the system prompt in `prompts/system.md`, with
@@ -339,6 +368,7 @@ The recorded round is in [`hillclimb/climb/`](hillclimb/climb/narrative.md).
 | Cost | `pricing.py`, `spend.py`, `ledger.py` | The rate card, cumulative spend against the cap, and [`COST_LEDGER.md`](COST_LEDGER.md). |
 | The walk | `walk.py` | Scores each cell against the pre-registered floor. |
 | Recorded runs | `results/`, `hillclimb/`, `pilot/` | `results/` is the lab's snapshot (`snapshot.py`). The full traces are in `hillclimb/` and `pilot/`. |
+| Viewer | `viewer.py` | A read-only Streamlit page over `results/`, graded and priced by your `lab/`. Tested by `tests/test_viewer.py` (`uv run --with streamlit==1.65.0 pytest tests/test_viewer.py`; plain `uv run pytest` skips it). |
 
 `uv run pytest` runs the whole suite offline (graders, generator, isolation, runner
 wiring with a fake backend, shortcut agents, and this lab). Summaries of what happened:

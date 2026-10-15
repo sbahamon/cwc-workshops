@@ -63,3 +63,4 @@ Evidence: [chart](../ship-your-first-managed-agent/evals/results/path.png), [led
 
 1. **A prompt round for Haiku's dropped bold label.** Four of Haiku's five misses are right answers without the `**Root cause:**` label. Re-measure against the same floor.
 2. **Cases that can't be solved by reading diffs alone.** Add a decoy whose diff also adds a per-row query, on a service that never pages, so only timing separates them. This changes what the agent sees, so the ladder must be re-run.
+3. **Evals through the dashboard itself.** Today the lab's Streamlit viewer (`evals/viewer.py`) only reads recorded results. Next would be driving the workshop's real chat panel on eval cases with Streamlit AppTest, or replaying eval sessions in its session picker. Both need changes to the original lab (`docs/plan.md`, "What would come next").

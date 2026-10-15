@@ -279,12 +279,10 @@ def run_live(model: str, effort: str | None, grading, cost, dry_run: bool) -> in
 
 
 # ── checkpoint 5 ────────────────────────────────────────────────────────
-def checkpoint_5(solution: bool) -> int:
-    grading, _ = lab("grading", solution)
-    cost, _ = lab("cost", solution)
-    keys = answers()
-    floor = state("ladder")["floor"]
-    print("Checkpoint 5: the cost-reduction path (results/, graded and priced by your code)")
+def path_stats(grading, cost, keys: dict[str, dict] | None = None) -> tuple[list[dict], int, int, int]:
+    """Every path cell graded and priced by `grading` and `cost`: (stats, rows, grades same, costs same).
+    Also what viewer.py shows."""
+    keys = answers() if keys is None else keys
     stats, rows_n, rc_same, usd_same = [], 0, 0, 0
     for c in path_cells():
         rc, fmt, verb, usd = [], [], [], []
@@ -304,8 +302,30 @@ def checkpoint_5(solution: bool) -> int:
         prompt = "shipped" if row["meta"]["system_sha"] == SHIPPED_SHA else "climbed"
         stats.append(dict(c, rows=len(fmt), rc=sum(rc) / len(rc), fmt=sum(fmt) / len(fmt), verb=verb,
                           cents=100 * sum(usd) / len(usd), prompt=prompt, effort_echoed=row["meta"]["effort_echoed"]))
+    return stats, rows_n, rc_same, usd_same
+
+
+def floor_need(base: dict, floor: dict) -> float:
+    """The pre-registered root-cause bar: the baseline's train+test score minus the allowed points."""
+    return base["rc"] - floor["root_cause_train_test_within_points_of_baseline"] / 100
+
+
+def floor_verdict(c: dict, base: dict, need: float, floor: dict) -> str:
+    fails = [name for name, bad in (("root cause", c["rc"] < need - 1e-9),
+                                     ("reg-verbatim", not all(c["verb"])),
+                                     ("format", c["fmt"] < floor["format_min"] - 1e-9)) if bad]
+    return ("reference" if c is base else
+            ("pass" if not fails else "fail: " + ", ".join(fails)) + (" (off path)" if c.get("role") == "diagnostic" else ""))
+
+
+def checkpoint_5(solution: bool) -> int:
+    grading, _ = lab("grading", solution)
+    cost, _ = lab("cost", solution)
+    floor = state("ladder")["floor"]
+    print("Checkpoint 5: the cost-reduction path (results/, graded and priced by your code)")
+    stats, rows_n, rc_same, usd_same = path_stats(grading, cost)
     base = stats[0]
-    need = base["rc"] - floor["root_cause_train_test_within_points_of_baseline"] / 100
+    need = floor_need(base, floor)
     print(f"Floor, pre-registered: root cause on train+test ≥ {need:.1%} (baseline − 10 points), "
           f"reg-verbatim right on every rep, format ≥ {floor['format_min']:.0%}.")
     print()
@@ -313,11 +333,7 @@ def checkpoint_5(solution: bool) -> int:
           f" {'verbatim':>8s} {'¢/incident':>10s}  floor")
     step = 0
     for c in stats:
-        fails = [name for name, bad in (("root cause", c["rc"] < need - 1e-9),
-                                         ("reg-verbatim", not all(c["verb"])),
-                                         ("format", c["fmt"] < floor["format_min"] - 1e-9)) if bad]
-        verdict = ("reference" if c is base else
-                   ("pass" if not fails else "fail: " + ", ".join(fails)) + (" (off path)" if c.get("role") == "diagnostic" else ""))
+        verdict = floor_verdict(c, base, need, floor)
         step += bool(c.get("adopted"))
         num = str(step) if c.get("adopted") else " "
         name = f"{NAMES[c['model']]}, {c['effort'] or c['effort_echoed']}, {c['prompt']}"

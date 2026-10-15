@@ -352,6 +352,40 @@ The post-results change was safe because grading is recomputed from saved transc
 
 Two concurrent `run.py` processes race on the shared `.registry.tmp` (Session log, Phase 6). Steffany's decision (2026-10-14): no code change; **run one `run.py` process at a time**, one cell after another. Within a cell, `--concurrency` (threads in one process) is safe, because the in-process lock covers it. This rule also goes in the facilitator notes (`evals/FACILITATOR_NOTES.md`, folded into D6 in Phase 9).
 
+### Results viewer (2026-10-15, no API spend)
+
+- `evals/viewer.py`: a read-only Streamlit page over `results/`, for participants. It is optional, after checkpoint 5. It shows checkpoint 5's table and a log-scale chart, plus a per-case drill-down: answer key, root-cause line, full reply, e2e.py next to yours (checkpoint 2's 40 rows), and per-request cost.
+  - Everything is graded and priced by the participant's `lab/` code (or `lab_complete/` via a toggle). Nothing graded is cached, so saved edits re-grade on the next rerun.
+  - Run with `uv run --with streamlit==1.65.0 streamlit run viewer.py`. Streamlit is kept out of `pyproject.toml` so `uv.lock`, and the harness sha, don't change.
+- `checkpoint.py`: `checkpoint_5`'s grading loop and floor verdict were extracted into `path_stats`, `floor_need` and `floor_verdict` so the viewer can reuse them. The printed output is unchanged (pinned by `tests/test_lab.py`). `checkpoint.py` is not a harness path.
+- `tests/test_viewer.py` (AppTest): the page renders on the stubs and the reference, shows checkpoint 5's match counts, the e2e.py filter finds rows, and nothing under `results/` is written. It skips under plain `uv run pytest`; run it with `uv run --with streamlit==1.65.0 pytest tests/test_viewer.py`.
+
+---
+
+## What would come next (not built)
+
+The brief (BUILD_BRIEF.md, Out of scope) lists these as "what would come next":
+
+- new failure-type generators
+- an LLM judge
+- editing the runbook skill
+- dashboard changes
+- fast mode and the higher model tiers
+
+**Evals through the workshop dashboard.** `viewer.py` reads recorded results only. Two ways to involve the real dashboard, both deferred:
+
+1. **Drive the real chat panel on eval cases.** Use Streamlit AppTest to run `provided.chat_panel` / `agent.stream_reply` against eval cases. What it would take:
+   - **Tool injection.** The eval serves each case's own fixtures (`evals/tools.py`), while `agent.handle_tool` reads the workshop's `data/`.
+   - **Data path.** `provided.py` loads `Path("data")` at import, relative to the working directory.
+   - **Networking.** The dashboard's environment is `unrestricted`; the eval's is `limited`, with no hosts.
+   - **Gates.** Paid sessions count against the $50 cap, and any change to a harness path needs `--approve-harness`.
+
+   It also edits the original lab, which the brief rules out, so it needs an explicit decision.
+2. **Replay eval sessions in the dashboard's session picker** with `sessions.events.list`. What it would take:
+   - **Agent switch.** `_list_sessions` (`provided.py:36`) lists only the dashboard agent's sessions, while eval sessions belong to the eval agents. The picker would need a way to switch agents.
+   - **Archived sessions.** `run.py` archives each session after it finishes. A live check is needed first to confirm archived sessions can still be listed and read.
+   - **Same workspace.** The dashboard must use the eval's API key and workspace.
+
 ---
 
 ## Session log
@@ -396,3 +430,8 @@ Two concurrent `run.py` processes race on the shared `.registry.tmp` (Session lo
   - D8 drafted at `docs/ONE_PAGER.md`. It covers the build and the choice of workshop, the seven criteria with evidence (rehearsal marked as not yet done), results, findings, what didn't work, and what's next.
   - The old e2e grader is now described by its real-data result everywhere it appears: checkpoint 2's output, the lab README, the facilitator talk-track (video segment 1), Findings item 3 above, and the PoC plan. On 289 recorded deploy-case replies it fails 40 correct answers (none writes "N+1") and passes no wrong one. The lenient case is presented as theoretical (a written fixture).
   - §B row 1 and BUILD_BRIEF.md are left as the original records.
+- 2026-10-15 (no API spend): optional results viewer for the lab.
+  - Added `evals/viewer.py`, `tests/test_viewer.py` and the `checkpoint.py` helpers (Post-results changes, "Results viewer"). The evals README gets an "Optional: the path in a browser" section; the facilitator guide's timing is unchanged.
+  - Wrote "What would come next (not built)", with the two deferred dashboard ideas, also added to ONE_PAGER.md's "What's next".
+  - `uv run pytest`: 241 passed, 1 skipped (the viewer tests), 1 xfailed. With Streamlit: the 4 viewer tests pass.
+  - Untouched: `pyproject.toml`, `uv.lock`, `results/`, `hillclimb/`, BUILD_BRIEF.md.
