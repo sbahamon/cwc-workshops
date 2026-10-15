@@ -112,6 +112,10 @@ pages/              ← Metrics, Logs, Deploys
 incident-triage-runbook/  ← the team's runbook skill (SKILL.md)
 data/               ← log + metrics + deploys + diff fixtures
 ui.py, assets/      ← styling
+config.py           ← model, system prompt and tools (shared with evals/)
+
+evals/              ← follow-on lab: "Your SRE agent works. Now make it cheap."
+ONE_PAGER.md        ← one-page summary of that eval build
 ```
 
 ## License

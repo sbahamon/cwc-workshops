@@ -4,7 +4,7 @@
 Shadow regrade: re-grade stored transcripts with a PROPOSED grader fix, beside the
 official grade. Analysis only: it never writes results.jsonl and isn't in the
 harness. Used overnight 2026-10-14 so walk decisions could proceed while the fix
-waits for Steffany's review (docs/plan.md session log).
+waits for Steffany's review (planning/plan.md session log).
 
     uv run python shadow_regrade.py v1 v2 ...
 

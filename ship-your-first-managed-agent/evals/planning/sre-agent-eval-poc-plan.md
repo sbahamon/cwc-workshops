@@ -2,7 +2,7 @@
 
 A follow-on lab to Anthropic's *Ship Your First Managed Agent* workshop that adds an eval, a model cost ladder, and one system-prompt hillclimb, built with the `claude-api` skill's `build-eval` and `hillclimb` commands.
 
-Author: Steffany Bahamon · Drafted October 13, 2026 · Updated October 14, 2026 with what actually happened (`docs/plan.md` is the detailed record)
+Author: Steffany Bahamon · Drafted October 13, 2026 · Updated October 14, 2026 with what actually happened (`evals/planning/plan.md` is the detailed record)
 
 ## Results
 
@@ -14,7 +14,7 @@ Author: Steffany Bahamon · Drafted October 13, 2026 · Updated October 14, 2026
 
 - **Deployment recommendation: Sonnet 5.5 at low effort with the climbed system prompt**, 7× cheaper than Opus 4.8 and passing the pre-registered floor with margin.
 - **Haiku 5.5 at low effort is the walk's incumbent**, a narrow pass at 0.42¢: the cheapest cell that clears the floor, but only after the pre-registered confirmation run, and with every miss on held-out cases. It's the cost-optimal option once a prompt fix stops it dropping the bold root-cause label.
-- Full numbers and spend: [`COST_LEDGER.md`](../ship-your-first-managed-agent/evals/COST_LEDGER.md). Chart: [`results/path.png`](../ship-your-first-managed-agent/evals/results/path.png).
+- Full numbers and spend: [`COST_LEDGER.md`](../COST_LEDGER.md). Chart: [`results/path.png`](../results/path.png).
 
 ---
 
@@ -290,7 +290,7 @@ The original stays out of the test set for three reasons:
 
 - **Keep the answer key structurally out of reach.** It never goes into the upload, a tool result, or the system prompt.
 - **Watch for scenario-specific patches.** A prompt patch that names commit hashes, "checkout," or specific times is overfitting and gets reverted.
-- **Noise.** With about 21 cases at 2 reps, the 95% interval on the full set is about ±15 points (`docs/plan.md` §B item 9). Expect the skill's noise check to ask for more repetitions; budget for 2–3.
+- **Noise.** With about 21 cases at 2 reps, the 95% interval on the full set is about ±15 points (`evals/planning/plan.md` §B item 9). Expect the skill's noise check to ask for more repetitions; budget for 2–3.
 - **Cost control.**
   - Run a one-case pilot first to measure real cost per session.
   - Set a budget on every session.
@@ -326,7 +326,7 @@ Each deliverable is mapped to the job requirements and to the LinkedIn post's se
   4. Swap the config to Haiku 5.5 at low effort; one case runs on it.
   5. Run the model ladder (or load the recorded results) and read the cost-reduction path chart (accuracy versus cost per incident).
 
-  The final checkpoint list, with expected outputs, is the one in `docs/plan.md` (Phase 9).
+  The final checkpoint list, with expected outputs, is the one in `evals/planning/plan.md` (Phase 9).
 - stretch for fast finishers: one `/claude-api hillclimb` round
 - learners write two small functions plus a one-line config swap, mirroring the original's seven-function shape
 
@@ -405,7 +405,7 @@ Each deliverable is mapped to the job requirements and to the LinkedIn post's se
 
 ### Timeline
 
-**Done (as of Wed Oct 14 evening).** The build, the walk and the hillclimb are complete. The teaching layer (D2, D3, D5 final, D6, D7, D8) moved to a separate session, `docs/plan.md` Phase 9.
+**Done (as of Wed Oct 14 evening).** The build, the walk and the hillclimb are complete. The teaching layer (D2, D3, D5 final, D6, D7, D8) moved to a separate session, `evals/planning/plan.md` Phase 9.
 
 | When | Milestone | Status |
 |---|---|---|
@@ -415,4 +415,4 @@ Each deliverable is mapped to the job requirements and to the LinkedIn post's se
 | Wed midday | Hillclimb on the target model's system prompt | done (one round, kept) |
 | Wed afternoon | README checkpoints, reference solution, recorded results, SOURCES.md, cost ledger, facilitator guide (D2, D3, D5, D6) | cost ledger and SOURCES.md done; the rest moved to Phase 9 |
 | Wed evening | Rehearse on a fresh clone; video (D7) and one-pager (D8) | moved to Phase 9 |
-| Thu Oct 15 | First interview. Full schedule and cut order are in `docs/BUILD_BRIEF.md`. | — |
+| Thu Oct 15 | First interview. Full schedule and cut order are in `evals/planning/BUILD_BRIEF.md`. | — |

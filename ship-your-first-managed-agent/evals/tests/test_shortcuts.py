@@ -109,7 +109,7 @@ def test_oracle_and_null(cases):
 #
 # It scores 19/21: every deploy case is solvable from the diffs alone, and its only
 # misses are the two stripe cases its component guess can't reach. The timeline
-# shortcuts above top out at 14/21. Recorded as a finding (docs/plan.md, Findings);
+# shortcuts above top out at 14/21. Recorded as a finding (planning/plan.md, Findings);
 # the cases were NOT hardened, so the two-thirds guard is a strict xfail for it.
 
 def _per_row(diff):

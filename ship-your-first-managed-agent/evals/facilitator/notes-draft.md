@@ -1,6 +1,6 @@
 # Facilitator notes (working draft)
 
-Running notes for the facilitator guide (D6). Folded into [`FACILITATOR_GUIDE.md`](FACILITATOR_GUIDE.md) in Phase 9; the guide is the version to teach from.
+Running notes for the facilitator guide (D6). Folded into the [facilitator guide](README.md) in Phase 9; the guide is the version to teach from.
 Built on Gagan Bhat's original workshop, *Ship your first managed agent* (Apache-2.0).
 
 ## Running the eval
@@ -10,7 +10,7 @@ Built on Gagan Bhat's original workshop, *Ship your first managed agent* (Apache
   (`.registry.tmp` → `.registry.json`) and the second one crashes in setup. This happened once,
   with no sessions started and nothing billed. Within one cell, `--concurrency N` is safe:
   those are threads in one process, and the in-process lock covers them. The race is known and
-  deliberately left unfixed (docs/plan.md, Post-results changes).
+  deliberately left unfixed (planning/plan.md, Post-results changes).
 - **Probe each error path live once before a grid.** The watchdog's first live timeout hung.
   The offline fake couldn't show that; a 1¢ live probe did.
 - **Audit the grader before trusting a failure.** Read only the grader's input on the failing
@@ -18,7 +18,7 @@ Built on Gagan Bhat's original workshop, *Ship your first managed agent* (Apache
 
 ## Terminology: two meanings of "harness"
 
-Goes near the top of `evals/README.md` (docs/plan.md, Phase 9):
+Goes near the top of `evals/README.md` (planning/plan.md, Phase 9):
 
 > **Two meanings of "harness."** The *agent harness* is the loop around the model
 > (prompting, tool calls, feeding results back). On Managed Agents, Anthropic runs it, and
@@ -29,7 +29,7 @@ Goes near the top of `evals/README.md` (docs/plan.md, Phase 9):
 > claude-api skill's hillclimb process, not something the API requires.
 
 **Talk-track.** Name the two meanings as soon as learners first see `--approve-harness`.
-Then use `docs/plan.md` → "Post-results changes" as the worked example:
+Then use `planning/plan.md` → "Post-results changes" as the worked example:
 - The eval harness was approved at three fingerprints:
   - `9f02ee7a8a03` before the pilot
   - `64ecf9d86b32` after the watchdog fix and `pricing.py`

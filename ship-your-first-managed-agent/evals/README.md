@@ -57,6 +57,20 @@ That replays all five checkpoints with the reference solution on the recorded re
 [`results/`](results/), in about 5 seconds. It needs [uv](https://docs.astral.sh/uv/) and
 nothing else: no key, no network after the first `uv` install, no spend.
 
+## What's in this folder
+
+| For | Where |
+|---|---|
+| **You, in the lab** | `lab/` (your code), `lab_complete/` (the reference), `checkpoint.py`, `viewer.py`, `results/` (the recorded runs every checkpoint replays) |
+| **Facilitators** | [`facilitator/`](facilitator/README.md): the guide. `notes-draft.md` is its earlier working draft. |
+| **The eval harness** | `run.py`, `graders.py`, `tools.py`, `cases.py`, `generate.py`, `specs.py`, `scenario.py`, `diffs.py`, `pricing.py`, `spend.py`, and `prompts/system.md`. They stay at the top level because their paths are part of the harness fingerprint `run.py` checks. |
+| **Analysis scripts** | `walk.py` (floor verdicts), `ledger.py`, `snapshot.py`, `plot_path.py` (the chart), `regrade.py`, `shadow_regrade.py` |
+| **Planning** | [`planning/`](planning/plan.md): the implementation plan and session log (`plan.md`), the original brief (`BUILD_BRIEF.md`) and the proof-of-concept plan (`sre-agent-eval-poc-plan.md`). The one-page summary is [`../ONE_PAGER.md`](../ONE_PAGER.md). |
+| **The build record** | `hillclimb/` and `pilot/` (full traces), [`COST_LEDGER.md`](COST_LEDGER.md), [`SOURCES.md`](SOURCES.md), `proposals/` (the one grader fix), `tests/` |
+
+Every script runs from this folder with `uv run`. "How the eval is built", at the end,
+says what each harness piece does.
+
 ## What you build
 
 Two small functions and a one-line swap, the same shape as the original workshop:
@@ -124,7 +138,7 @@ audit of failing rows caught it, after results existed.
 ## Checkpoint 2: catch the old grader out
 
 The workshop's `e2e.py` passes when the transcript contains "n+1" and `a3f9c21`
-anywhere (`e2e.py:104-105`). It's the lab's only test, and it passed. Read those two lines,
+anywhere (`e2e.py:89-90`). It's the lab's only test, and it passed. Read those two lines,
 then predict: on 289 real replies from cheaper models, how many does it get wrong, and
 which way?
 
@@ -137,7 +151,7 @@ Expected:
 <!-- expected-output: checkpoint 2 -->
 ```text
 Checkpoint 2: the e2e.py grader, next to yours
-e2e.py passes a reply when "n+1" and the sha appear anywhere in it (e2e.py:104-105).
+e2e.py passes a reply when "n+1" and the sha appear anywhere in it (e2e.py:89-90).
 
 Both checks on all 289 recorded replies to deploy cases (7 cells in results/;
 e2e.py's check is applied with each case's own sha):
@@ -339,7 +353,7 @@ look at:
 Streamlit isn't in `pyproject.toml` on purpose. Adding it would change `uv.lock`, and with
 it the harness sha that `run.py` checks. Not built yet: running eval cases through the
 workshop dashboard's own chat panel. That's in
-[`docs/plan.md`](../../docs/plan.md), "What would come next".
+[`planning/plan.md`](planning/plan.md), "What would come next".
 
 ## Stretch: one hillclimb round
 
@@ -377,8 +391,8 @@ wiring with a fake backend, shortcut agents, and this lab). Summaries of what ha
 [`hillclimb/ladder/narrative.md`](hillclimb/ladder/narrative.md) and
 [`hillclimb/climb/narrative.md`](hillclimb/climb/narrative.md). Every model ID, field and
 claim is mapped to its source in [`SOURCES.md`](SOURCES.md). Teaching it:
-[`FACILITATOR_GUIDE.md`](FACILITATOR_GUIDE.md). The full build record is in
-[`docs/plan.md`](../../docs/plan.md).
+[`facilitator/`](facilitator/README.md). The full build record is in
+[`planning/plan.md`](planning/plan.md).
 
 ## Credits and license
 

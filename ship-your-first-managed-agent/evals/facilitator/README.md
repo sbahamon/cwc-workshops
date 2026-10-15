@@ -3,7 +3,7 @@
 
 # Facilitator guide: "Your SRE agent works. Now make it cheap."
 
-For whoever teaches [`README.md`](README.md). It's built on Gagan Bhat's original workshop,
+For whoever teaches [`README.md`](../README.md). It's built on Gagan Bhat's original workshop,
 *Ship Your First Managed Agent* (Apache-2.0), and assumes the room has done that workshop
 or watched it.
 
@@ -19,7 +19,7 @@ Do each of these on a fresh clone before you teach:
       blocks show. The tests check this too, but run it yourself so you've seen it.
 - [ ] You've written `grade_root_cause` yourself, without `lab_complete/`, and hit at least
       one fixture failure. Learners will hit the same ones (see "Where learners get stuck").
-- [ ] You can give the real-data finding on `e2e.py:104-105` from memory (it fails 40
+- [ ] You can give the real-data finding on `e2e.py:89-90` from memory (it fails 40
       correct answers out of 289 recorded deploy-case replies and passes no wrong one),
       and say why the lenient case is only theoretical here.
 - [ ] You can say what the pre-registered floor is (root cause within 10 points of the
@@ -62,7 +62,7 @@ checkpoint 2.
 > skill's hillclimb process, not something the API requires.
 
 **Talk-track.** Name the two meanings as soon as learners first see `--approve-harness`
-(the README's checkpoint 4 mentions it). Then use `docs/plan.md` → "Post-results changes"
+(the README's checkpoint 4 mentions it). Then use `planning/plan.md` → "Post-results changes"
 as the worked example:
 
 - **Three approvals.** The eval harness was approved at three fingerprints:
@@ -82,7 +82,7 @@ as the worked example:
 Lead with the measurement, not the hypothetical. The memorable fact is what the old check
 did to real replies.
 
-1. **Set it up.** Put `e2e.py:104-105` on screen:
+1. **Set it up.** Put `e2e.py:89-90` on screen:
    `("n+1" in full or "n + 1" in full) and "a3f9c21" in full`. Say: "This was the lab's
    only test, and it passed. We ran it on 289 real replies from the ladder. Guess how
    many it got wrong, and which way." Take a few guesses; most rooms guess "too lenient".
@@ -171,7 +171,7 @@ Nothing in the core lab needs the API. Every checkpoint replays `results/`.
   (`.registry.tmp` → `.registry.json`), and the second one crashes in setup. This
   happened once, with no sessions started and nothing billed. Within one cell,
   `--concurrency N` is safe: those are threads in one process, and the in-process lock
-  covers them. The race is known and deliberately left unfixed (docs/plan.md,
+  covers them. The race is known and deliberately left unfixed (planning/plan.md,
   Post-results changes).
 - **Probe each error path live once before a grid.** The watchdog's first live timeout
   hung. The offline fake couldn't show that; a 1¢ live probe did.
@@ -184,7 +184,7 @@ Nothing in the core lab needs the API. Every checkpoint replays `results/`.
   - `uv run python spend.py` shows where the money went.
 - **The eval and the dashboard are still separate.** `viewer.py` only reads recorded
   results. Running eval cases through the workshop's real chat panel, or replaying eval
-  sessions in its session picker, isn't built yet. docs/plan.md, "What would come next",
+  sessions in its session picker, isn't built yet. planning/plan.md, "What would come next",
   says what each would take.
 
 ## What I found in the original lab
@@ -207,7 +207,7 @@ shipped; the rest came from building and running the eval.
    - Fix in the eval: healthy requests log a batched `IN (?)` query, so the agent has to
      notice batched turning into per-row (`evals/generate.py`, `request()`).
 3. **The e2e grader fails correct answers.** It passes only when "n+1" and the sha
-   appear anywhere in the agent's text (`e2e.py:104-105`). On the 289 recorded replies to
+   appear anywhere in the agent's text (`e2e.py:89-90`). On the 289 recorded replies to
    deploy cases it fails **40 correct answers**, each one describing the bug without the
    word "N+1", and passes **no wrong one** (checkpoint 2). In theory it's also too
    lenient: a recap of every deploy that floats "N+1" and blames the wrong commit would

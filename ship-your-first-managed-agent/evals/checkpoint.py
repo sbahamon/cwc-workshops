@@ -145,7 +145,7 @@ def checkpoint_1(solution: bool) -> int:
 def checkpoint_2(solution: bool) -> int:
     grading, where = lab("grading", solution)
     print("Checkpoint 2: the e2e.py grader, next to yours")
-    print('e2e.py passes a reply when "n+1" and the sha appear anywhere in it (e2e.py:104-105).')
+    print('e2e.py passes a reply when "n+1" and the sha appear anywhere in it (e2e.py:89-90).')
     keys = answers()
     counts = {(1, 1): 0, (0, 1): 0, (1, 0): 0, (0, 0): 0}
     example = None

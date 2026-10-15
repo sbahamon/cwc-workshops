@@ -1,6 +1,6 @@
 # Copyright 2026 Anthropic PBC
 # SPDX-License-Identifier: Apache-2.0
-"""Grader fixtures, registered before any eval run (docs/plan.md, Phase 3)."""
+"""Grader fixtures, registered before any eval run (planning/plan.md, Phase 3)."""
 import pytest
 
 from graders import find_root_cause_line, grade, grade_format, grade_legacy_e2e, grade_root_cause
@@ -135,7 +135,7 @@ def test_grading_is_deterministic():
 
 # Found overnight 2026-10-14 in ladder/v1 (two rows scored 0 for naming the right sha
 # followed by a period). Fixed in graders.py after the Phase 6 results; every stored
-# row was regraded in place by regrade.py (docs/plan.md, post-results bug fix).
+# row was regraded in place by regrade.py (planning/plan.md, post-results bug fix).
 @pytest.mark.parametrize("line", [
     "> **Root cause:** `a3f9c21`. The \"readability\" refactor turned one batched order-items query into one query per order (N+1).",
     "**Root cause:** `a3f9c21`. Per-row queries replaced the batched lookup.",

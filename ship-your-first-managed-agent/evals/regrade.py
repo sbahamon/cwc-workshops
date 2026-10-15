@@ -6,7 +6,7 @@ Re-grade stored rows in place with the current graders.py, from their saved trac
     uv run python regrade.py            # report what would change
     uv run python regrade.py --write    # rewrite results.jsonl files
 
-Used once, 2026-10-14, after the trailing-punctuation grader fix (docs/plan.md,
+Used once, 2026-10-14, after the trailing-punctuation grader fix (planning/plan.md,
 post-results bug fix). A row whose grade changes keeps its previous grade in
 meta.grade_before_regrade, so the change is auditable from the file itself.
 Never calls the API; costs nothing.

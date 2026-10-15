@@ -1,7 +1,7 @@
 # Copyright 2026 Anthropic PBC
 # SPDX-License-Identifier: Apache-2.0
 """
-Evaluate ladder cells against the pre-registered floor (docs/plan.md C0.3).
+Evaluate ladder cells against the pre-registered floor (planning/plan.md C0.3).
 
     uv run python walk.py                  # every cell in hillclimb/ladder/
     uv run python walk.py v1 --json        # one cell, machine-readable

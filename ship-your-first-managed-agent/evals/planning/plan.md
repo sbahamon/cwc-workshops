@@ -1,6 +1,6 @@
 # Implementation plan: "Your SRE agent works. Now make it cheap."
 
-Status: approved Oct 13, 2026, with Steffany's amendments (§C0). Companion docs: `docs/sre-agent-eval-poc-plan.md` (why) and `docs/BUILD_BRIEF.md` (brief). §B is the verification report against the repo, the installed SDK and the claude-api skill docs; where §B or §C0 disagrees with the brief, this file wins. Paths in §C are relative to `ship-your-first-managed-agent/`.
+Status: approved Oct 13, 2026, with Steffany's amendments (§C0). Companion docs: `evals/planning/sre-agent-eval-poc-plan.md` (why) and `evals/planning/BUILD_BRIEF.md` (brief). §B is the verification report against the repo, the installed SDK and the claude-api skill docs; where §B or §C0 disagrees with the brief, this file wins. Paths in §C are relative to `ship-your-first-managed-agent/`.
 
 ---
 
@@ -95,7 +95,7 @@ Paths are relative to `ship-your-first-managed-agent/`. Every acceptance check i
 9. **Tonight's target:** through Phase 5 (pilot), then launch the ladder baseline and Sonnet 5.5 low in the background.
 
 ### Phase 0: files from this plan (no API spend)
-- Write `docs/plan.md` (§A–C) at the repo root and `evals/SOURCES.md` (§D).
+- Write `evals/planning/plan.md` (§A–C) at the repo root and `evals/SOURCES.md` (§D).
 - Confirm `.env` is ignored: `git check-ignore -v ship-your-first-managed-agent/.env` → `.gitignore:5:.env`. (Already true at the root, and in the workshop's `.gitignore:1`.)
 - **Accept:** both files exist; `git status` shows only them.
 
@@ -287,7 +287,7 @@ Paths are relative to `ship-your-first-managed-agent/`. Every acceptance check i
 - `evals/lab/` (stubs: `grade_root_cause`, `session_cost`, plus a one-line config swap) and `evals/lab_complete/`.
 - `evals/results/`: a snapshot of the ladder and climb, without bulk traces unless you want them.
 - `evals/README.md`: near the top, the **"Two meanings of 'harness'"** note (agent harness vs eval harness; text in `evals/FACILITATOR_NOTES.md`), then story, five checkpoints with expected-output blocks, a one-command demo that runs on recorded results with no key, and credit to Gagan Bhat's original (Apache-2.0).
-- `FACILITATOR_GUIDE.md`, the final `SOURCES.md`, and a session log appended to `docs/plan.md`.
+- `FACILITATOR_GUIDE.md`, the final `SOURCES.md`, and a session log appended to `evals/planning/plan.md`.
 - D6 and D8 each include a **"What I found in the original lab"** section covering every item in **Findings to carry into the write-ups** (below).
 - **Accept:** every Findings item, and the shortcut-agent lesson with its numbers (timeline 17/21 → 11/21; diffs-only 19/21), appears in both D6 and D8; on a fresh clone with no API key, `uv run pytest` passes; every checkpoint's expected output reproduces from `results/`; the original lab smoke test passes.
 
@@ -307,7 +307,7 @@ Both D6 and D8 get a section titled **"What I found in the original lab."** Ever
 
 1. **The log gives away the culprit's deploy.** `data/generate_log.py:143` writes `deploy_complete` only for `a3f9c21`, so one grep for deploy events finds the culprit without reading anything else. Fix in the eval: every deploy and rollback in the window is logged (`evals/generate.py`, `background()`).
 2. **The log gives away the query change.** In the original log, the per-row `SELECT … WHERE order_id = ?` lines are the first database lines of any kind. The culprit stands out without reasoning about query shape (the Phase 1 smoke run's agent said it directly: "first-ever `SELECT * FROM order_items …` query appears"). It's the same kind of leak as item 1. Fix in the eval: healthy requests log a batched `IN (?)` query, so the agent has to notice batched turning into per-row (`evals/generate.py`, `request()`).
-3. **The e2e grader fails correct answers.** On the 289 recorded replies to deploy cases, the `e2e.py:104-105` check (each case's own sha) fails **40 correct answers** (none of them writes "N+1") and passes **no wrong one** (`evals/checkpoint.py 2`). The lenient case, a recap of deploys that floats "N+1" and blames the wrong commit, is theoretical: only a written fixture shows it. Lead with the measurement. This is the lab's grader-validation moment (checkpoint 2, video segment 1). *(Reframed 2026-10-14 from "both too lenient and too strict" once the recorded data showed which side is real.)*
+3. **The e2e grader fails correct answers.** On the 289 recorded replies to deploy cases, the `e2e.py:89-90` check (each case's own sha) fails **40 correct answers** (none of them writes "N+1") and passes **no wrong one** (`evals/checkpoint.py 2`). The lenient case, a recap of deploys that floats "N+1" and blames the wrong commit, is theoretical: only a written fixture shows it. Lead with the measurement. This is the lab's grader-validation moment (checkpoint 2, video segment 1). *(Reframed 2026-10-14 from "both too lenient and too strict" once the recorded data showed which side is real.)*
 4. **`get_diff` matches by substring.** `args["commit"][:7] in diff` returns the diff for any 7-character fragment of it, for example `order_i` (`agent_complete.py`, `e2e.py`). Fix in the eval: an exact sha match against the deploy list (`evals/tools.py`).
 5. **e2e tested a different prompt from the one learners ship.** `e2e.py` kept its own shorter SYSTEM and TOOLS, so the Oct 13 smoke test didn't exercise the dashboard prompt. Fixed by Change 1 (`config.py`).
 6. **The default effort isn't what the docs table says.** On Managed Agents, Opus 4.8 with no effort set reports `effort: xhigh`, not the skill table's `high` (sesn_01Vy3PfLW7MwY35zqBcV6Reg).
@@ -350,7 +350,7 @@ The post-results change was safe because grading is recomputed from saved transc
 
 ### Operating rule: run cells sequentially (registry race, not fixed)
 
-Two concurrent `run.py` processes race on the shared `.registry.tmp` (Session log, Phase 6). Steffany's decision (2026-10-14): no code change; **run one `run.py` process at a time**, one cell after another. Within a cell, `--concurrency` (threads in one process) is safe, because the in-process lock covers it. This rule also goes in the facilitator notes (`evals/FACILITATOR_NOTES.md`, folded into D6 in Phase 9).
+Two concurrent `run.py` processes race on the shared `.registry.tmp` (Session log, Phase 6). Steffany's decision (2026-10-14): no code change; **run one `run.py` process at a time**, one cell after another. Within a cell, `--concurrency` (threads in one process) is safe, because the in-process lock covers it. This rule also goes in the facilitator notes (`evals/facilitator/notes-draft.md`, folded into D6, `evals/facilitator/README.md`, in Phase 9).
 
 ### Results viewer (2026-10-15, no API spend)
 
@@ -390,7 +390,7 @@ The brief (BUILD_BRIEF.md, Out of scope) lists these as "what would come next":
 
 ## Session log
 
-- 2026-10-13: plan approved with amendments; Phase 0 written (`docs/plan.md`, `ship-your-first-managed-agent/evals/SOURCES.md`). No code, no API spend.
+- 2026-10-13: plan approved with amendments; Phase 0 written (`evals/planning/plan.md`, `ship-your-first-managed-agent/evals/SOURCES.md`). No code, no API spend.
 - 2026-10-14: Phase 1 (Change 1) applied. New `config.py` (MODEL, EFFORT=None, `model_param()`, SYSTEM, TOOLS, RUNBOOK_DIR; no Streamlit); `provided.py` re-exports SYSTEM/TOOLS from it; `agent_complete.py` and `e2e.py` use `model_param()`; `e2e.py` now runs the canonical dashboard prompt and tools (its old shorter copies removed). Offline checks passed: SYSTEM/TOOLS byte-identical to HEAD `provided.py`; `model_param()` returns the bare string `claude-opus-4-8`; all 4 dashboard pages render via Streamlit AppTest with the agent offline; mocked `agent_complete.setup_agent` sends the same `agents.create` arguments as before. Noted, not fixed (original lab untouched): Streamlit warns that `use_container_width`, used in `provided.py` and `pages/1_Metrics.py`, was scheduled for removal after 2025-12-31; it still works on the installed version. Pending: gated e2e re-smoke (≈$0.22). Correction: the first run of these checks called `.venv/bin/python` directly, against the uv ground rule; they were rerun with `uv run --no-project` (same results), and the Phase 1 commands above now use it.
 - 2026-10-14: Phase 1 e2e re-smoke (`uv run --no-project python e2e.py`, canonical dashboard prompt): **PASS**, 47 s wall, 40.9 s active, **$0.20 list cost** (7 model requests, 4 sandbox + 4 custom tool calls; tokens in 14 / out 2,741 / cache read 67,674 / cache write 15,288; matches $0.1989 from list prices). Recorded in `evals/pilot/manual.jsonl`; cumulative project spend $0.20 of $50. Findings: (1) Opus 4.8 with no effort set echoes `effort: xhigh` on Managed Agents, not the skill table's `high`; (2) `session.usage` events arrive during normal runs (5 here), resolving §B item 7; (3) the agent followed the runbook order and ended with a blockquoted root-cause line, as in the Oct 13 run. Side effect: e2e.py creates a new skill, agent and environment every run (as shipped).
 - 2026-10-14: Phase 2 done (no API spend). New in `evals/`: `pyproject.toml` + `uv.lock` (anthropic==1.13.0, python-dotenv; pytest dev), `scenario.py`, `diffs.py`, `generate.py`, `specs.py`, `tools.py`, `cases.py`, `prompts/system.md` (byte-identical to `config.SYSTEM`), `tests/`. `uv run python generate.py` writes 21 cases (4 val / 9 train / 8 test); `cases/` is gitignored and regenerated deterministically. Generated logs are 4.7k–10.2k lines (`reg-verbatim` keeps the original 69,740). `uv run pytest -q`: 151 passed offline in about 5 s; negative checks confirmed the tests catch a leaking tool and metrics/log drift. Design choices made while building: (1) the page time comes from metrics (the last run of p99 > 500 ms that is still going at the end of the window, stamped at its second minute), which reproduces the original "~14:32" and keeps a recovered blip, such as `rb-early-n1`'s rolled-back deploy, from paging; (2) healthy DB requests log a batched `IN (?)` query, so the switch to per-row queries is a contrast rather than the first-ever query line; (3) traps: `nc-db-1` reuses the original culprit's commit message on a harmless deploy an hour before onset; `im-docs` has an innocent "fix: remove N+1" deploy; in `dc-after` the decoy is a real but minor inventory regression (`cache_removed`), not a harmless diff; (4) `get_diff` matches a sha exactly (7-char prefix) against the case's deploy list, so the old substring quirk (`order_i` returning the diff) is gone.
@@ -427,7 +427,7 @@ The brief (BUILD_BRIEF.md, Out of scope) lists these as "what would come next":
   - Not done in this session: D8 (the one-pager, which must also carry the Findings), the D7 video, the final SOURCES.md pass, and the rehearsal.
   - Untouched: `config.py` (still the shipped prompt), `hillclimb/`, and every harness file (ladder and climb harness sha still `c808e86bdb6d`).
 - 2026-10-14 (no API spend):
-  - D8 drafted at `docs/ONE_PAGER.md`. It covers the build and the choice of workshop, the seven criteria with evidence (rehearsal marked as not yet done), results, findings, what didn't work, and what's next.
+  - D8 drafted at `ONE_PAGER.md`. It covers the build and the choice of workshop, the seven criteria with evidence (rehearsal marked as not yet done), results, findings, what didn't work, and what's next.
   - The old e2e grader is now described by its real-data result everywhere it appears: checkpoint 2's output, the lab README, the facilitator talk-track (video segment 1), Findings item 3 above, and the PoC plan. On 289 recorded deploy-case replies it fails 40 correct answers (none writes "N+1") and passes no wrong one. The lenient case is presented as theoretical (a written fixture).
   - §B row 1 and BUILD_BRIEF.md are left as the original records.
 - 2026-10-15 (no API spend): optional results viewer for the lab.
@@ -435,3 +435,12 @@ The brief (BUILD_BRIEF.md, Out of scope) lists these as "what would come next":
   - Wrote "What would come next (not built)", with the two deferred dashboard ideas, also added to ONE_PAGER.md's "What's next".
   - `uv run pytest`: 241 passed, 1 skipped (the viewer tests), 1 xfailed. With Streamlit: the 4 viewer tests pass.
   - Untouched: `pyproject.toml`, `uv.lock`, `results/`, `hillclimb/`, BUILD_BRIEF.md.
+- 2026-10-15 (no API spend): tidied `evals/`.
+  - Facilitator docs moved into `evals/facilitator/`: `FACILITATOR_GUIDE.md` → `facilitator/README.md`, `FACILITATOR_NOTES.md` → `facilitator/notes-draft.md`. Links updated in the evals README, ONE_PAGER.md, the ladder narrative and "Operating rule" above. Earlier session-log entries keep the old names as written.
+  - The evals README gains a "What's in this folder" map. The Python stays at the top level: harness file paths are part of `harness_sha`, so moving them would need re-approval.
+  - The stale `e2e.py:104-105` references are now `e2e.py:89-90` (checkpoint 2's output, the README's pinned block, the facilitator guide, Findings item 3). §B row 1 keeps the original line numbers as the record of the file at that time.
+  - Both charts (viewer and `results/path.png`/`.svg`) restyled after the claude.dev hillclimbing figure; `path.png` regenerated with `plot_path.py` from the recorded runs.
+- 2026-10-15 (no API spend): the repo-root `docs/` folder is gone.
+  - `plan.md`, `BUILD_BRIEF.md` and `sre-agent-eval-poc-plan.md` moved to `ship-your-first-managed-agent/evals/planning/`; `ONE_PAGER.md` moved to `ship-your-first-managed-agent/`. Paths and links inside them, and in the READMEs, the facilitator guide and non-harness code comments, now point to the new places; `COST_LEDGER.md` regenerated by `ledger.py` for its one path.
+  - Left with the old `docs/plan.md` path on purpose: `specs.py`'s docstring (a harness file; editing it would change `harness_sha`) and the recorded run files under `hillclimb/` and their copies in `results/`.
+  - The root README lists this workshop and its eval lab first and the other upstream workshops in one line. Those folders are in the repo; a sparse checkout that excludes them makes their links look broken locally.

@@ -1,18 +1,18 @@
-> **Status (2026-10-14):** historical brief, kept as written. `docs/plan.md` supersedes it wherever they differ.
+> **Status (2026-10-14):** historical brief, kept as written. `evals/planning/plan.md` supersedes it wherever they differ.
 
 # Build brief: "Your SRE agent works. Now make it cheap."
 
 For: a Claude Code plan-mode session in Steffany's fork of `anthropics/cwc-workshops`.
-Companion doc: `docs/sre-agent-eval-poc-plan.md` (the why, the findings, the deliverables). Read it first.
+Companion doc: `evals/planning/sre-agent-eval-poc-plan.md` (the why, the findings, the deliverables). Read it first.
 Window: tonight (Tue Oct 13) and all day Wed Oct 14. Goal: every deliverable in the plan doc (D1–D8) done before the first interview on Thu Oct 15. The scope is the plan doc's scope; nothing is added here.
 
 ---
 
 ## Paste this into Claude Code to start
 
-> Read `docs/sre-agent-eval-poc-plan.md`, then this brief (`docs/BUILD_BRIEF.md`), then everything in `ship-your-first-managed-agent/`. Load the claude-api skill and read `shared/evals/build-eval.md`, `shared/evals/eval-hillclimb.md`, `shared/evals/cost-hillclimb.md`, `shared/evals/report/SCHEMA.md`, `shared/managed-agents-core.md` and `shared/managed-agents-events.md`.
+> Read `evals/planning/sre-agent-eval-poc-plan.md`, then this brief (`evals/planning/BUILD_BRIEF.md`), then everything in `ship-your-first-managed-agent/`. Load the claude-api skill and read `shared/evals/build-eval.md`, `shared/evals/eval-hillclimb.md`, `shared/evals/cost-hillclimb.md`, `shared/evals/report/SCHEMA.md`, `shared/managed-agents-core.md` and `shared/managed-agents-events.md`.
 >
-> Stay in plan mode. First, work through the "Verify before planning" checklist below against the actual repo and docs, and report every place the brief is wrong. Then write the implementation plan to `docs/plan.md`, organized by the phases in this brief, with file-level steps and the acceptance check for each phase. Start `SOURCES.md` with every API field, model ID and docs page the plan relies on. Don't write any code until I approve the plan.
+> Stay in plan mode. First, work through the "Verify before planning" checklist below against the actual repo and docs, and report every place the brief is wrong. Then write the implementation plan to `evals/planning/plan.md`, organized by the phases in this brief, with file-level steps and the acceptance check for each phase. Start `SOURCES.md` with every API field, model ID and docs page the plan relies on. Don't write any code until I approve the plan.
 
 ---
 
@@ -179,7 +179,7 @@ Run grids in the background (the skill's pattern) while working on the teaching 
 
 | When | Phase | Done when |
 |---|---|---|
-| Tue evening, first ~hour | Key and probe (done), fork (done), SDK fix + pin and smoke test (done: PASS, about 3 minutes, $0.22), Change 1, plan mode, plan approved | `docs/plan.md` approved |
+| Tue evening, first ~hour | Key and probe (done), fork (done), SDK fix + pin and smoke test (done: PASS, about 3 minutes, $0.22), Change 1, plan mode, plan approved | `evals/planning/plan.md` approved |
 | Tue evening | Changes 2–4 + tests; Gate 0 pilot | `uv run pytest` green; pilot cost printed |
 | Tue late | Launch Tier 1 in the background | Rows landing in `baseline/` and variant directories |
 | Wed morning | `/claude-api build-eval` review: inputs page, grader check, baseline + CI; Tier 2 in the background | Baseline score + noise estimate; ladder table |
@@ -205,7 +205,7 @@ Don't cut the regression check, the tests, the cost ledger, the reference soluti
 - [ ] `SOURCES.md`: every API field, model ID and claim mapped to its docs page, including the effort-override finding
 - [ ] `COST_LEDGER.md`: real spend per tier, per model, per round, from `session.usage`
 - [ ] `FACILITATOR_GUIDE.md`: timing, where learners get stuck, talk track for the grader moment, rate-limit fallback, a "ready to teach" checklist
-- [ ] `docs/plan.md`, plus a session log appended after the build
+- [ ] `evals/planning/plan.md`, plus a session log appended after the build
 - [ ] Video (5–8 minutes) and a one-page summary
 
 ---
