@@ -16,6 +16,23 @@ find the same root causes? It adds:
 sequel has to meet the same bar. And it has what an eval needs: a closed answer, a runbook
 that defines the failure modes, and a data generator.
 
+## Teaching materials
+
+Built as the proof of concept for the Technical Curriculum Developer and Lead Technical
+Instructor roles; deliverables as planned in [`sre-agent-eval-poc-plan.md`](evals/planning/sre-agent-eval-poc-plan.md), Part 4.
+
+| Deliverable | Where | Status |
+|---|---|---|
+| D1 Public repo, credited fork | this folder, [`evals/`](evals/) | done |
+| D2 Lab README as checkpoints | [`evals/README.md`](evals/README.md): five checkpoints, expected output pinned by tests | done |
+| D3 Reference solution and recorded results | [`lab_complete/`](evals/lab_complete/), [`results/`](evals/results/README.md), and a read-only [viewer](evals/viewer.py) | done |
+| D4 Tests and a cost ledger | [`tests/`](evals/tests/), [`COST_LEDGER.md`](evals/COST_LEDGER.md) | done |
+| D5 Sources | [`SOURCES.md`](evals/SOURCES.md) | done |
+| D6 Facilitator guide | [`facilitator/README.md`](evals/facilitator/README.md) | done |
+| Projected slides (added) | [`facilitator/slides.html`](evals/facilitator/slides.html): 11 slides plus a troubleshooting appendix | done |
+| D7 Teaching video | — | **not yet** |
+| D8 This one-pager | this page | done |
+
 ## The seven criteria, with evidence
 
 1. **A real problem.** The same 2am page, turned into 21 incidents in six families taken from the runbook's own steps ([`specs.py`](evals/specs.py)).
@@ -25,8 +42,8 @@ that defines the failure modes, and a data generator.
 5. **A way back.** [`lab_complete/`](evals/lab_complete/) plus `--solution`, and a [`results/`](evals/results/README.md) snapshot, so nobody waits on the API.
 6. **Something to keep.** [`run.py`](evals/run.py) takes any model, effort and system prompt, and the graders and cost function carry over to your own agent.
 7. **Tested and rehearsed.**
-   - Tested: 241 offline tests pass on a fresh clone with no key, and the README's expected outputs are pinned by [`test_lab.py`](evals/tests/test_lab.py).
-   - Facilitated: a [facilitator guide](evals/facilitator/README.md) is written.
+   - Tested: 242 offline tests pass on a fresh clone with no key, and the README's expected outputs are pinned by [`test_lab.py`](evals/tests/test_lab.py). The slides' numbers are checked against them too.
+   - Facilitated: a [facilitator guide](evals/facilitator/README.md) and [slides](evals/facilitator/slides.html) are written.
    - Rehearsed: **not yet**. The live rehearsal is still to do.
 
 ## Results

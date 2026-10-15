@@ -4,6 +4,17 @@
 # cwc-workshops
 
 > **New lab:** [*Your SRE agent works. Now make it cheap.*](./ship-your-first-managed-agent/evals/README.md) — evals, a model × effort walk and one prompt hillclimb for the SRE agent; runs on recorded results with no API key.
+>
+> **Teaching materials for that lab**
+>
+> | For | Start here |
+> |---|---|
+> | Learners | [the lab README](./ship-your-first-managed-agent/evals/README.md): five checkpoints with expected output, no key needed |
+> | Instructors | [facilitator guide](./ship-your-first-managed-agent/evals/facilitator/README.md) (timing, talk-tracks, where people get stuck) and [projected slides](./ship-your-first-managed-agent/evals/facilitator/slides.html) (download and open in a browser) |
+> | Anyone stuck | [reference solution](./ship-your-first-managed-agent/evals/lab_complete/) and [recorded runs](./ship-your-first-managed-agent/evals/results/README.md) |
+> | Reviewers | [one-page summary](./ship-your-first-managed-agent/ONE_PAGER.md) and [build record](./ship-your-first-managed-agent/evals/planning/plan.md) |
+>
+> The eval lab is a private proof of concept, not official Anthropic material.
 
 Workshop materials. Not maintained and not accepting contributions.
 

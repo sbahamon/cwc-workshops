@@ -7,6 +7,10 @@
 > Code with Claude workshop (Apache-2.0). That workshop builds the agent. This lab
 > measures it, then finds the cheapest model that still names the right commit.
 
+> **Teaching this lab?** Start with the [facilitator guide](facilitator/README.md) (timing,
+> talk-tracks, a ready-to-teach checklist) and the [slides](facilitator/slides.html) (open
+> in a browser; `A` jumps to troubleshooting).
+
 > **Two meanings of "harness."** The *agent harness* is the loop around the model
 > (prompting, tool calls, feeding results back). On Managed Agents, Anthropic runs it, and
 > you only configure the agent. The *eval harness* is the measuring setup: cases, tools,

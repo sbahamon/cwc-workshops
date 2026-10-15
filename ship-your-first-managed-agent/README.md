@@ -11,6 +11,10 @@
 >
 > This workshop builds the agent that does that forty minutes for you.
 
+> **Follow-on lab:** [*Your SRE agent works. Now make it cheap.*](evals/README.md) measures
+> this agent and finds the cheapest model that still names the right commit. Teaching it?
+> See the [facilitator guide](evals/facilitator/README.md) and [slides](evals/facilitator/slides.html).
+
 A working incident dashboard for a fictional e-commerce stack. The Metrics,
 Logs, and Deploys pages run out of the box from mock data. There's an
 **SRE Agent** chat panel on the side of every page — and it's offline.
