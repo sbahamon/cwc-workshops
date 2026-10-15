@@ -19,8 +19,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import altair as alt  # noqa: E402  (ships with streamlit)
+import math  # noqa: E402
+from html import escape  # noqa: E402
+
 import streamlit as st  # noqa: E402
+import streamlit.components.v1 as components  # noqa: E402
 
 import checkpoint  # noqa: E402
 from checkpoint import NAMES, NotDone, call  # noqa: E402
@@ -72,6 +75,83 @@ def maybe(fn, *args):
 def not_done(e: NotDone, n: int) -> None:
     st.warning(f"not done yet: {e}\n\n(or turn on the reference solution in the sidebar, "
                f"the same as `uv run python checkpoint.py {n} --solution`)")
+
+
+# ── the path chart: the claude.dev hillclimbing figure's look, drawn as SVG ──
+INK, MUTED, BG, ACCENT = "#141413", "#65645e", "#faf9f5", "#c15f3c"
+LINE, LINE_SOFT = "#14141338", "#1414131c"
+HALO = f'stroke="{BG}" stroke-width="3" stroke-linejoin="round" paint-order="stroke"'
+
+
+def path_svg(stats: list[dict], need: float) -> str:
+    """Root cause against ¢ per incident (log): the adopted path numbered and linked by dashed
+    arrows, every other visited cell as a hollow point, and the pre-registered floor as a dashed line."""
+    W, H, L, R, T, B = 660, 400, 68, 640, 32, 330
+    cents = [c["cents"] for c in stats]
+    lo, hi = math.log(min(cents) / 1.6), math.log(max(cents) * 1.6)
+    ymin = min(5 * math.floor((100 * min(min(c["rc"] for c in stats), need) - 1) / 5), 95) / 100
+    x = lambda c: L + (math.log(c) - lo) / (hi - lo) * (R - L)
+    y = lambda v: B - (v - ymin) / (1 - ymin) * (B - T)
+    out = [f'<svg viewBox="0 0 {W} {H}" width="{W}" height="{H}" xmlns="http://www.w3.org/2000/svg" '
+           f'style="background:{BG};font-family:system-ui,-apple-system,sans-serif;'
+           f'font-variant-numeric:tabular-nums;border-radius:8px">']
+    for v in range(round(100 * ymin), 101, 5):  # gridlines
+        out.append(f'<line x1="{L}" x2="{R}" y1="{y(v / 100):.1f}" y2="{y(v / 100):.1f}" stroke="{LINE_SOFT}"/>'
+                   f'<text x="{L - 6}" y="{y(v / 100) + 4:.1f}" text-anchor="end" font-size="12" fill="{MUTED}">{v}%</text>')
+    out.append(f'<line x1="{L}" x2="{R}" y1="{B}" y2="{B}" stroke="{LINE}"/>')
+    for t in (0.25, 0.5, 1, 2, 4, 8, 16, 32, 64):  # log ticks
+        if lo <= math.log(t) <= hi:
+            out.append(f'<line x1="{x(t):.1f}" x2="{x(t):.1f}" y1="{B}" y2="{B + 5}" stroke="{LINE}"/>'
+                       f'<text x="{x(t):.1f}" y="{B + 20}" text-anchor="middle" font-size="12" fill="{MUTED}">{t:g}¢</text>')
+    out.append(f'<text x="{(L + R) / 2}" y="{B + 50}" text-anchor="middle" font-size="13" fill="{MUTED}">'
+               'Cost per incident at the rate card, log scale</text>'
+               f'<text transform="translate(12 {(T + B) / 2}) rotate(-90)" text-anchor="middle" font-size="13" '
+               f'fill="{MUTED}">Root cause, train + test</text>')
+    out.append(f'<line x1="{L}" x2="{R}" y1="{y(need):.1f}" y2="{y(need):.1f}" stroke="{LINE}" '
+               f'stroke-dasharray="3 4" stroke-linecap="round"/>'
+               f'<text x="{L + 6}" y="{y(need) - 6:.1f}" font-size="12" fill="{MUTED}" {HALO}>Floor</text>')
+
+    path = [c for c in stats if c.get("adopted")]
+    for a, b in zip(path, path[1:]):  # dashed arrows, shortened so they don't touch the dots
+        x1, y1, x2, y2 = x(a["cents"]), y(a["rc"]), x(b["cents"]), y(b["rc"])
+        d = math.hypot(x2 - x1, y2 - y1) or 1
+        ux, uy = (x2 - x1) / d, (y2 - y1) / d
+        sx, sy, ex, ey = x1 + 10 * ux, y1 + 10 * uy, x2 - 10 * ux, y2 - 10 * uy
+        head = [(ex - 6 * ux + 4 * s * uy, ey - 6 * uy - 4 * s * ux) for s in (1, -1)]
+        out.append(f'<path d="M{sx:.1f} {sy:.1f} L{ex:.1f} {ey:.1f}" fill="none" stroke="{MUTED}" '
+                   f'stroke-dasharray="4 3" stroke-linecap="round"/>'
+                   f'<path d="M{head[0][0]:.1f} {head[0][1]:.1f} L{ex:.1f} {ey:.1f} L{head[1][0]:.1f} {head[1][1]:.1f}" '
+                   f'fill="none" stroke="{MUTED}" stroke-linejoin="round" stroke-linecap="round"/>')
+    for c in stats:  # visited, not adopted
+        if not c.get("adopted"):
+            tip = escape(f"{c['cell']}: {NAMES[c['model']]}, {c['effort'] or c['effort_echoed']}, "
+                         f"{c['prompt']} prompt, {c['rc']:.1%} at {c['cents']:.2f}¢")
+            out.append(f'<circle cx="{x(c["cents"]):.1f}" cy="{y(c["rc"]):.1f}" r="4" fill="{BG}" '
+                       f'stroke="{MUTED}"><title>{tip}</title></circle>')
+    placed: list[tuple[float, float, float, float]] = []  # label boxes so far
+    for n, c in enumerate(path, 1):  # the path: dot, numbered badge, two-line label
+        px, py = x(c["cents"]), y(c["rc"])
+        name = f"{NAMES[c['model']]}, {c['effort'] or c['effort_echoed']} effort"
+        what = "Baseline" if n == 1 else f"{c['prompt'].capitalize()} prompt"
+        wide = 30 + 7.2 * max(len(name), len(what) + 18)  # rough text width
+        left = px + 16 + wide > W  # right of the point unless it runs off the edge
+        x0, x1 = (px - 16 - wide, px - 8) if left else (px + 8, px + 16 + wide)
+        by = py + 30
+        while any(max(x0, a0) < min(x1, a1) and max(by - 12, b0) < min(by + 28, b1) for a0, b0, a1, b1 in placed):
+            by += 42  # move down until clear of earlier labels
+        placed.append((x0, by - 12, x1, by + 28))
+        bx = px + (-16 if left else 16)
+        tx, anchor = bx + (-14 if left else 14), "end" if left else "start"
+        out.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="4.5" fill="{ACCENT}" stroke="{BG}"/>'
+                   f'<circle cx="{bx:.1f}" cy="{by:.1f}" r="8.5" fill="{BG}" stroke="{INK}"/>'
+                   f'<text x="{bx:.1f}" y="{by + 4:.1f}" text-anchor="middle" font-size="11" font-weight="500" '
+                   f'fill="{INK}">{n}</text>'
+                   f'<text x="{tx:.1f}" y="{by + 5:.1f}" text-anchor="{anchor}" font-size="14" font-weight="500" '
+                   f'fill="{INK}" {HALO}>{escape(name)}</text>'
+                   f'<text x="{tx:.1f}" y="{by + 22:.1f}" text-anchor="{anchor}" font-size="12" fill="{MUTED}" '
+                   f'{HALO}>{escape(what)}, {c["rc"]:.1%} at {c["cents"]:.2f}¢</text>')
+    out.append("</svg>")
+    return "".join(out)
 
 
 solution = st.sidebar.toggle("Use the reference solution (lab_complete/)", key="solution")
@@ -126,17 +206,13 @@ with path_tab:
         st.markdown(f"Your grades match the recorded ones on **{rc_same}/{rows_n}** rows; "
                     f"your costs match the recorded rate card on **{usd_same}/{rows_n}**.")
 
-        points = [dict(r, kind="adopted" if r["#"] else ("reference" if r["floor"] == "reference" else
-                                                         "pass" if r["floor"].startswith("pass") else "fail"))
-                  for r in table]
-        enc = dict(x=alt.X("¢/incident:Q", scale=alt.Scale(type="log"), title="¢ per incident (rate card, log)"),
-                   y=alt.Y("root cause:Q", scale=alt.Scale(zero=False), title="root cause, train+test (%)"))
-        dots = alt.Chart(alt.Data(values=points)).mark_circle(size=120).encode(
-            **enc, color=alt.Color("kind:N", title=""), tooltip=["cell:N", "model, effort, prompt:N", "floor:N"])
-        labels = alt.Chart(alt.Data(values=[p for p in points if p["#"]])).mark_text(dy=-12).encode(**enc, text="#:N")
-        st.altair_chart(dots + labels, width="stretch")
+        st.markdown("##### The cost-reduction path")
+        st.caption(f"{len([c for c in stats if c.get('adopted')])} configurations along the adopted path. "
+                   "Hollow points were visited but not adopted; hover one for its cell.")
+        components.html(f'<body style="margin:0">{path_svg(stats, need)}</body>', height=405)
 
-    st.image(str(checkpoint.RESULTS / "path.png"), caption="The recorded chart (plot_path.py), with confidence intervals")
+    with st.expander("The recorded chart (plot_path.py), with 95% confidence intervals"):
+        st.image(str(checkpoint.RESULTS / "path.png"))
 
 # ── Cases: every reply behind the numbers ───────────────────────────────
 with cases_tab:

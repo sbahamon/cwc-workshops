@@ -276,8 +276,9 @@ passes with margin and is the deployment recommendation (COST_LEDGER.md).
 
 - **Axes.** x is the mean cost per incident at the rate card, on a log scale. y is
   root-cause accuracy on the train and test cases, with 95% confidence intervals.
-- **The orange path.** The numbered orange points, linked by dashed arrows, are the
-  cells that were adopted, in order. Grey points were visited but not adopted.
+- **The path.** The filled, numbered points, linked by dashed arrows, are the cells
+  that were adopted, in order. Hollow points were visited but not adopted; the list
+  under the chart says which cell each is and why. The dashed line is the floor.
 - **The walk** goes in this order:
   - It starts at the baseline (Opus 4.8, default effort).
   - It enters at Sonnet 5.5 low.
@@ -288,7 +289,7 @@ passes with margin and is the deployment recommendation (COST_LEDGER.md).
     3.41¢.
   - From that pass, the walk steps down to Haiku 5.5 low with the same prompt, which
     passes narrowly.
-- **The grey point at 13.65¢** is a diagnostic, Opus 4.8 at low effort. It was run only
+- **The hollow point at 13.65¢** (v2) is a diagnostic, Opus 4.8 at low effort. It was run only
   to check that the effort dial is alive (output tokens fell 4,371 → 1,735 per session),
   and it was kept off the path by design.
 
@@ -326,8 +327,9 @@ page re-grades. Three things to
 look at:
 
 - **Path tab: your table.** The same numbers checkpoint 5 prints, with the floor verdict
-  for each cell and a log-scale chart. The recorded `path.png` is underneath for
-  comparison.
+  for each cell, and the path drawn from your numbers: the adopted cells numbered and
+  linked, the others hollow (hover for the cell), the floor dashed. The recorded
+  `path.png`, with confidence intervals, is in an expander underneath.
 - **Cases tab: the 40 rows from checkpoint 2.** Pick a cell, then "e2e.py fails a correct
   answer". Most of the 40 are in `ladder/v5` (21) and `climb/v1` (13). Pick a row to see
   the answer key, the root-cause line your grader read, and the full reply.
